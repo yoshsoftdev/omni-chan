@@ -1,0 +1,35 @@
+[Unit]
+Description=Omni-Chan Webhook Service (port 8090, Meta/Telegram ingress)
+Documentation=https://github.com/omnichannel/omni-chan-v2
+After=network-online.target nats.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=omni-chan
+Group=omni-chan
+
+# Install layout (see deploy/install-services.sh):
+#   /opt/omni-chan-webhook/bin/webhook-service
+#   /opt/omni-chan-webhook/.env          (HTTP_PORT=8090)
+WorkingDirectory=/opt/omni-chan-webhook
+EnvironmentFile=-/opt/omni-chan-webhook/.env
+ExecStart=/opt/omni-chan-webhook/bin/webhook-service
+
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=30s
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=omni-chan-webhook
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

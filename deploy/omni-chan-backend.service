@@ -1,0 +1,38 @@
+[Unit]
+Description=Omni-Chan Backend API (port 8070, includes /ws)
+Documentation=https://github.com/omnichannel/omni-chan-v2
+After=network-online.target postgresql.service redis.service nats.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=omni-chan
+Group=omni-chan
+
+# Install layout (see deploy/install-services.sh):
+#   /opt/omni-chan-backend/bin/omni-chan-backend
+#   /opt/omni-chan-backend/.env          (HTTP_PORT=8070)
+#   /opt/omni-chan-backend/migrations/   (required at startup)
+#   /opt/omni-chan-backend/storage/
+WorkingDirectory=/opt/omni-chan-backend
+EnvironmentFile=-/opt/omni-chan-backend/.env
+ExecStart=/opt/omni-chan-backend/bin/omni-chan-backend
+
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=30s
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=omni-chan-backend
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/omni-chan-backend/storage
+
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

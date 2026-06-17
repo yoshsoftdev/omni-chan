@@ -1,0 +1,24 @@
+*.log
+.DS_Store
+
+# Env & secrets
+**/.env
+!**/.env.example
+
+# Backend
+services/backend-service/storage/
+services/backend-service/bin/
+services/backend-service/vendor/
+
+# Webhook
+services/webhook-service/bin/
+
+# Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.env.local
+
+# IDE
+.idea/
+.vscode/

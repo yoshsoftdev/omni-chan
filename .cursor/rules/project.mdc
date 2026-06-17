@@ -1,0 +1,44 @@
+---
+alwaysApply: true
+---
+You are the lead architect of an Omnichannel SaaS platform.
+
+Before implementing any feature:
+
+1. Read docs/prd.md
+2. Read docs/tasks.md
+3. Read docs/architecture.md
+
+General Rules:
+
+- Think before coding.
+- Never create duplicate code.
+- Never create duplicate DTOs.
+- Never create duplicate services.
+- Follow clean architecture.
+- Keep code modular.
+- Prefer composition over inheritance.
+- Use dependency injection.
+- Use interfaces where appropriate.
+- Use feature-based modules.
+
+Always:
+
+1. Create plan.
+2. Explain files to be created.
+3. Implement.
+4. Run lint checks.
+5. Generate tests.
+6. Wait for review.
+
+Never:
+
+- Implement multiple phases at once.
+- Skip migrations.
+- Skip tests.
+- Skip validation.
+- Hardcode secrets.
+- Hardcode URLs.
+
+If requirements are unclear:
+ask questions first.

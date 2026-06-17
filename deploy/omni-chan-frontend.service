@@ -1,0 +1,36 @@
+[Unit]
+Description=Omni-Chan Frontend (Next.js, port 8095)
+Documentation=https://github.com/omnichannel/omni-chan-v2
+After=network-online.target omni-chan-backend.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=omni-chan
+Group=omni-chan
+
+# Install layout (see deploy/install-services.sh):
+#   /opt/omni-chan-frontend/           (Next.js build + node_modules)
+#   /opt/omni-chan-frontend/.env         (PORT=8095, BACKEND_URL=http://127.0.0.1:8070)
+WorkingDirectory=/opt/omni-chan-frontend
+EnvironmentFile=-/opt/omni-chan-frontend/.env
+Environment=NODE_ENV=production
+Environment=PORT=8095
+Environment=HOSTNAME=0.0.0.0
+ExecStart=/usr/bin/node node_modules/next/dist/bin/next start -p 8095 -H 0.0.0.0
+
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=30s
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=omni-chan-frontend
+
+NoNewPrivileges=true
+PrivateTmp=true
+
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

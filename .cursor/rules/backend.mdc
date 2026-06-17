@@ -1,0 +1,264 @@
+---
+alwaysApply: true
+---
+You are a senior Golang backend engineer.
+
+Tech Stack:
+
+- Go 1.25+
+- Fiber
+- PostgreSQL
+- Redis
+- NATS JetStream
+- WebSocket
+- MinIO
+- JWT
+
+Architecture (monorepo — all backend code under `backend/`):
+
+backend/cmd/
+backend/internal/
+backend/pkg/
+backend/migrations/
+
+Use:
+
+- Clean Architecture
+- Repository Pattern
+- Service Layer
+- Dependency Injection
+
+Folder Structure:
+
+internal/
+
+auth/
+user/
+team/
+contact/
+device/
+conversation/
+message/
+broadcast/
+template/
+automation/
+websocket/
+storage/
+
+Every feature must contain:
+
+entity.go
+repository.go
+service.go
+handler.go
+routes.go
+
+Database Rules:
+
+- PostgreSQL only
+- Migration first
+- UUID primary key
+- created_at
+- updated_at
+- deleted_at
+
+API Rules:
+
+- REST API
+- JSON only
+- OpenAPI compatible
+
+Response Format:
+
+{
+  "success": true,
+  "message": "",
+  "data": {}
+}
+
+Error Format:
+
+{
+  "success": false,
+  "message": "error message"
+}
+
+WebSocket Rules:
+
+- Separate hub package
+- Multi tenant aware
+- Redis pub/sub ready
+
+Storage Rules:
+
+- Use Storage interface
+- Support local and MinIO
+
+Testing:
+
+- Generate unit tests
+- Mock repositories
+- Target 80% coverage
+
+Never:
+
+- Put SQL inside handlers
+- Put business logic inside handlers
+- Put storage logic inside handlers
+
+API Versioning Rules
+
+All APIs MUST be versioned.
+
+Current version:
+
+/api/v1
+
+Example:
+
+/api/v1/auth/login
+/api/v1/auth/refresh
+/api/v1/teams
+/api/v1/devices
+/api/v1/contacts
+/api/v1/conversations
+/api/v1/messages
+/api/v1/broadcasts
+
+Route Structure:
+
+internal/
+
+api/
+├── v1/
+│   ├── auth/
+│   ├── team/
+│   ├── device/
+│   ├── contact/
+│   ├── conversation/
+│   ├── message/
+│   └── broadcast/
+│
+└── router.go
+
+When breaking changes occur:
+
+Create new version.
+
+Example:
+
+/api/v2/auth/login
+/api/v2/devices
+
+Do not modify existing v1 behavior.
+
+Support multiple versions simultaneously.
+
+Rules:
+
+- Never introduce breaking changes in existing version.
+- New fields may be added.
+- Field removal requires new API version.
+- Response structure changes require new API version.
+- Authentication changes require new API version.
+
+Broadcast Rules
+
+Broadcast is a core feature of the product.
+
+However all broadcast implementation must follow Meta WhatsApp policies.
+
+Allowed
+Approved Meta Templates
+Cloud API Templates
+Coexistence Templates
+Image Header
+Video Header
+Document Header
+URL Button
+Quick Reply Button
+Copy Code Button
+Campaign Scheduling
+Campaign Reporting
+Not Allowed
+Free Text Broadcast
+Random Text Broadcast
+Spintax Broadcast
+Unlimited Marketing Text Generator
+Template-less Broadcast
+Message Randomization
+Template Source
+
+Templates must be synchronized from Meta.
+
+Users cannot create templates directly from the application.
+
+Template creation is handled in Meta Business Manager.
+
+Application only supports:
+
+Sync Template
+Preview Template
+Use Template
+Required Database
+
+templates
+campaigns
+campaign_contacts
+
+Required APIs
+
+GET /api/v1/templates
+
+POST /api/v1/templates/sync
+
+GET /api/v1/campaigns
+
+POST /api/v1/campaigns
+
+POST /api/v1/campaigns//send
+
+GET /api/v1/campaigns//report
+
+Campaign Flow
+
+Create Campaign
+→ Select WABA
+→ Select Template
+→ Configure Variables
+→ Select Audience
+→ Schedule
+→ Send
+
+Variable Mapping
+
+Template variables must support mapping from contact fields.
+
+Example:
+
+{{1}} → contact.name
+
+{{2}} → contact.order_number
+
+Sending Rules
+
+Campaign sending must be asynchronous.
+
+Required flow:
+
+Campaign
+→ Queue
+→ Worker
+→ Meta API
+
+Direct synchronous sending from API is prohibited.
+
+Reporting
+
+Track:
+
+Total Contacts
+Sent
+Delivered
+Read
+Failed

@@ -1,0 +1,81 @@
+---
+alwaysApply: true
+---
+You are a senior frontend engineer.
+
+Tech Stack:
+
+- Next.js App Router
+- TypeScript
+- Tailwind
+- Shadcn UI
+- Zustand
+- React Query
+
+Folder Structure:
+
+src/
+
+app/
+components/
+features/
+hooks/
+services/
+store/
+types/
+
+Feature Structure:
+
+features/
+
+auth/
+contacts/
+inbox/
+broadcast/
+team/
+settings/
+
+Rules:
+
+- Mobile responsive
+- Dark mode support
+- Reusable components
+- Feature based architecture
+
+State:
+
+- Zustand for global state
+- React Query for server state
+
+API:
+
+- Centralized API client
+- JWT interceptor
+- Refresh token support
+
+WebSocket:
+
+- Single websocket service
+- Reconnect automatically
+
+UI Rules:
+
+- Use Shadcn components
+- Avoid inline styles
+- Avoid duplicated components
+
+Pages:
+
+/login
+/dashboard
+/inbox
+/contacts
+/broadcast
+/team
+/settings
+
+Never:
+
+- Call APIs directly in components
+- Store business logic inside pages
+- Duplicate forms

@@ -1,0 +1,14 @@
+[submodule "services/backend-service"]
+	path = services/backend-service
+	url = git@git.int.visibel.id:omni-chan/omni-backend.git
+	branch = main
+
+[submodule "frontend"]
+	path = frontend
+	url = git@git.int.visibel.id:omni-chan/omni-frontend.git
+	branch = main
+
+[submodule "services/webhook-service"]
+	path = services/webhook-service
+	url = git@git.int.visibel.id:omni-chan/omni-webhook.git
+	branch = master
