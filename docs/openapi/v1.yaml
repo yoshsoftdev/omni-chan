@@ -1,0 +1,1252 @@
+openapi: 3.0.3
+info:
+  title: Omni-Chan API
+  version: 1.0.0
+  description: HTTP API v1 for the Omni-Chan omnichannel platform.
+
+servers:
+  - url: /api/v1
+    description: API v1 base path
+
+tags:
+  - name: Auth
+  - name: Workspace
+  - name: Teams
+  - name: Channels
+  - name: Templates
+  - name: Contacts
+  - name: Segments
+  - name: Tags
+  - name: Campaigns
+  - name: Reports
+  - name: Conversations
+  - name: Messages
+  - name: Dashboard
+  - name: Onboarding
+  - name: Operations
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    SuccessResponse:
+      type: object
+      required: [success, message]
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+        data:
+          type: object
+
+    ErrorResponse:
+      type: object
+      required: [success, error]
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              enum:
+                - validation_error
+                - unauthorized
+                - forbidden
+                - not_found
+                - conflict
+                - quota_exceeded
+                - feature_not_available
+                - internal_error
+            message:
+              type: string
+
+    PaginationMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+        page_size:
+          type: integer
+        total:
+          type: integer
+          format: int64
+        total_pages:
+          type: integer
+
+    PageResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+        pagination:
+          $ref: '#/components/schemas/PaginationMeta'
+
+    ReadinessResponse:
+      type: object
+      properties:
+        score:
+          type: integer
+        status:
+          type: string
+          enum: [not_started, in_progress, ready]
+        checks:
+          type: array
+          items:
+            type: object
+            properties:
+              key:
+                type: string
+              completed:
+                type: boolean
+
+    DashboardOverview:
+      type: object
+      properties:
+        contacts:
+          type: integer
+          format: int64
+        channels:
+          type: integer
+          format: int64
+        campaigns:
+          type: integer
+          format: int64
+        unread_conversations:
+          type: integer
+          format: int64
+        readiness_score:
+          type: integer
+
+    OnboardingSnapshot:
+      type: object
+      properties:
+        current_step:
+          type: integer
+        completed_steps:
+          type: array
+          items:
+            type: integer
+        score:
+          type: integer
+
+  parameters:
+    PageParam:
+      in: query
+      name: page
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSizeParam:
+      in: query
+      name: page_size
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
+  responses:
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Conflict:
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    FeatureNotAvailable:
+      description: Feature not available
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+paths:
+  /health:
+    get:
+      tags: [Auth]
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register workspace
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password]
+              properties:
+                name: { type: string }
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+                team_name: { type: string }
+      responses:
+        '201':
+          description: Registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+      responses:
+        '200':
+          description: Logged in
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh access token
+      responses:
+        '200':
+          description: Token refreshed
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Logout
+      responses:
+        '200':
+          description: Logged out
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      security: [{ bearerAuth: [] }]
+      summary: Current user profile
+      responses:
+        '200':
+          description: OK
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /workspace:
+    get:
+      tags: [Workspace]
+      security: [{ bearerAuth: [] }]
+      summary: Get workspace
+      responses:
+        '200':
+          description: OK
+    patch:
+      tags: [Workspace]
+      security: [{ bearerAuth: [] }]
+      summary: Update workspace
+      responses:
+        '200':
+          description: Updated
+
+  /workspace/quotas:
+    get:
+      tags: [Workspace]
+      security: [{ bearerAuth: [] }]
+      summary: Workspace quotas
+      responses:
+        '200':
+          description: OK
+
+  /workspace/readiness:
+    get:
+      tags: [Workspace]
+      security: [{ bearerAuth: [] }]
+      summary: Workspace readiness checklist
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ReadinessResponse'
+
+  /workspace/readiness/refresh:
+    post:
+      tags: [Workspace]
+      security: [{ bearerAuth: [] }]
+      summary: Recompute and persist workspace readiness snapshot
+      responses:
+        '200':
+          description: Refreshed
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ReadinessResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /teams/members:
+    get:
+      tags: [Teams]
+      security: [{ bearerAuth: [] }]
+      summary: List team members
+      responses:
+        '200':
+          description: OK
+    post:
+      tags: [Teams]
+      security: [{ bearerAuth: [] }]
+      summary: Add team member
+      responses:
+        '201':
+          description: Created
+
+  /teams/users:
+    get:
+      tags: [Teams]
+      security: [{ bearerAuth: [] }]
+      summary: List team users
+      parameters:
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: role
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          users:
+                            type: array
+                            items:
+                              type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /teams/users/invite:
+    post:
+      tags: [Teams]
+      security: [{ bearerAuth: [] }]
+      summary: Invite user
+      responses:
+        '201':
+          description: Invited
+
+  /teams/users/{id}/role:
+    patch:
+      tags: [Teams]
+      security: [{ bearerAuth: [] }]
+      summary: Update user role
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Updated
+
+  /teams/users/{id}/deactivate:
+    post:
+      tags: [Teams]
+      security: [{ bearerAuth: [] }]
+      summary: Deactivate user
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Deactivated
+
+  /teams/users/{id}:
+    delete:
+      tags: [Teams]
+      security: [{ bearerAuth: [] }]
+      summary: Remove user
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Removed
+
+  /teams/roles:
+    get:
+      tags: [Teams]
+      security: [{ bearerAuth: [] }]
+      summary: List assignable roles
+      responses:
+        '200':
+          description: OK
+
+  /channels:
+    get:
+      tags: [Channels]
+      security: [{ bearerAuth: [] }]
+      summary: List channels
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/PageResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      tags: [Channels]
+      security: [{ bearerAuth: [] }]
+      summary: Create channel
+      responses:
+        '201':
+          description: Created
+
+  /channels/{id}:
+    get:
+      tags: [Channels]
+      security: [{ bearerAuth: [] }]
+      summary: Get channel
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: OK
+    patch:
+      tags: [Channels]
+      security: [{ bearerAuth: [] }]
+      summary: Update channel
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Updated
+    delete:
+      tags: [Channels]
+      security: [{ bearerAuth: [] }]
+      summary: Delete channel
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Deleted
+
+  /templates:
+    get:
+      tags: [Templates]
+      security: [{ bearerAuth: [] }]
+      summary: List templates
+      responses:
+        '200':
+          description: OK
+
+  /templates/{id}:
+    get:
+      tags: [Templates]
+      security: [{ bearerAuth: [] }]
+      summary: Get template
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: OK
+
+  /templates/sync:
+    post:
+      tags: [Templates]
+      security: [{ bearerAuth: [] }]
+      summary: Sync templates from Meta
+      responses:
+        '501':
+          $ref: '#/components/responses/FeatureNotAvailable'
+
+  /contacts:
+    get:
+      tags: [Contacts]
+      security: [{ bearerAuth: [] }]
+      summary: List contacts
+      responses:
+        '200':
+          description: OK
+    post:
+      tags: [Contacts]
+      security: [{ bearerAuth: [] }]
+      summary: Create contact
+      responses:
+        '201':
+          description: Created
+
+  /contacts/{id}:
+    get:
+      tags: [Contacts]
+      security: [{ bearerAuth: [] }]
+      summary: Get contact
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: OK
+    patch:
+      tags: [Contacts]
+      security: [{ bearerAuth: [] }]
+      summary: Update contact
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Updated
+    delete:
+      tags: [Contacts]
+      security: [{ bearerAuth: [] }]
+      summary: Delete contact
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Deleted
+
+  /segments:
+    get:
+      tags: [Segments]
+      security: [{ bearerAuth: [] }]
+      summary: List segments
+      responses:
+        '200':
+          description: OK
+    post:
+      tags: [Segments]
+      security: [{ bearerAuth: [] }]
+      summary: Create segment
+      responses:
+        '201':
+          description: Created
+
+  /segments/{id}:
+    get:
+      tags: [Segments]
+      security: [{ bearerAuth: [] }]
+      summary: Get segment
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: OK
+    patch:
+      tags: [Segments]
+      security: [{ bearerAuth: [] }]
+      summary: Update segment
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Updated
+    delete:
+      tags: [Segments]
+      security: [{ bearerAuth: [] }]
+      summary: Delete segment
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Deleted
+
+  /tags:
+    get:
+      tags: [Tags]
+      security: [{ bearerAuth: [] }]
+      summary: List tags
+      responses:
+        '200':
+          description: OK
+    post:
+      tags: [Tags]
+      security: [{ bearerAuth: [] }]
+      summary: Create tag
+      responses:
+        '201':
+          description: Created
+
+  /tags/{id}:
+    get:
+      tags: [Tags]
+      security: [{ bearerAuth: [] }]
+      summary: Get tag
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: OK
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [Tags]
+      security: [{ bearerAuth: [] }]
+      summary: Update tag
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Updated
+    delete:
+      tags: [Tags]
+      security: [{ bearerAuth: [] }]
+      summary: Delete tag
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Deleted
+
+  /tags/{id}/contacts/{contact_id}:
+    post:
+      tags: [Tags]
+      security: [{ bearerAuth: [] }]
+      summary: Assign tag to contact
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+        - in: path
+          name: contact_id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Assigned
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Tags]
+      security: [{ bearerAuth: [] }]
+      summary: Unassign tag from contact
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+        - in: path
+          name: contact_id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Unassigned
+
+  /campaigns:
+    get:
+      tags: [Campaigns]
+      security: [{ bearerAuth: [] }]
+      summary: List campaigns
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/PageResponse'
+    post:
+      tags: [Campaigns]
+      security: [{ bearerAuth: [] }]
+      summary: Create campaign
+      responses:
+        '201':
+          description: Created
+
+  /campaigns/{id}:
+    get:
+      tags: [Campaigns]
+      security: [{ bearerAuth: [] }]
+      summary: Get campaign
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: OK
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [Campaigns]
+      security: [{ bearerAuth: [] }]
+      summary: Update campaign
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Updated
+    delete:
+      tags: [Campaigns]
+      security: [{ bearerAuth: [] }]
+      summary: Delete campaign
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Deleted
+
+  /campaigns/{id}/send:
+    post:
+      tags: [Campaigns]
+      security: [{ bearerAuth: [] }]
+      summary: Queue campaign for broadcast send
+      description: |
+        Transitions a draft or scheduled campaign to `queued` and enqueues a
+        `broadcast.job.created` outbox event for the orchestrator pipeline.
+        Requires `campaign.send` permission.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Campaign queued for send
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /campaigns/{id}/cancel:
+    post:
+      tags: [Campaigns]
+      security: [{ bearerAuth: [] }]
+      summary: Cancel campaign
+      description: |
+        Cancels a campaign and non-terminal recipients. Sets PostgreSQL state
+        to `cancelled` and a Redis cancel flag (`cancel:campaign:{id}`, TTL 24h)
+        for fast worker polling. Requires `campaign.cancel` permission.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Optional human-readable cancel reason
+      responses:
+        '200':
+          description: Campaign cancelled (idempotent if already cancelled)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /operations/broadcast:
+    get:
+      tags: [Operations]
+      security: [{ bearerAuth: [] }]
+      summary: Broadcast pipeline status
+      description: Read-only operational metrics. Requires `workspace.manage`.
+      responses:
+        '200':
+          description: Broadcast pipeline snapshot
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          queued_jobs: { type: integer }
+                          active_batches: { type: integer }
+                          stale_batches: { type: integer }
+                          recovery_pending: { type: integer }
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /operations/workers:
+    get:
+      tags: [Operations]
+      security: [{ bearerAuth: [] }]
+      summary: Background worker registration counts
+      description: |
+        Counts live worker heartbeats from Redis (`ops:worker:*`).
+        Requires `workspace.manage`.
+      responses:
+        '200':
+          description: Worker registration snapshot
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          orchestrators: { type: integer }
+                          send_workers: { type: integer }
+                          event_consumers: { type: integer }
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /reports/dashboard:
+    get:
+      tags: [Reports]
+      security: [{ bearerAuth: [] }]
+      summary: Reporting dashboard
+      parameters:
+        - in: query
+          name: from
+          required: true
+          schema: { type: string, format: date-time }
+        - in: query
+          name: to
+          required: true
+          schema: { type: string, format: date-time }
+        - in: query
+          name: channel_id
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: OK
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /reports/daily:
+    get:
+      tags: [Reports]
+      security: [{ bearerAuth: [] }]
+      summary: Daily campaign trend
+      parameters:
+        - in: query
+          name: from
+          required: true
+          schema: { type: string, format: date-time }
+        - in: query
+          name: to
+          required: true
+          schema: { type: string, format: date-time }
+      responses:
+        '200':
+          description: OK
+
+  /reports/campaigns:
+    get:
+      tags: [Reports]
+      security: [{ bearerAuth: [] }]
+      summary: List campaign reports
+      parameters:
+        - in: query
+          name: from
+          required: true
+          schema: { type: string, format: date-time }
+        - in: query
+          name: to
+          required: true
+          schema: { type: string, format: date-time }
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/PageResponse'
+
+  /reports/campaigns/{id}:
+    get:
+      tags: [Reports]
+      security: [{ bearerAuth: [] }]
+      summary: Get campaign report funnel
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: OK
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /reports/campaigns/{id}/clicks:
+    get:
+      tags: [Reports]
+      security: [{ bearerAuth: [] }]
+      summary: List campaign link clicks
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/PageResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /conversations:
+    get:
+      tags: [Conversations]
+      security: [{ bearerAuth: [] }]
+      summary: List conversations
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
+        - in: query
+          name: status
+          schema: { type: string, enum: [open, assigned, closed] }
+        - in: query
+          name: assigned_to
+          schema: { type: string, format: uuid }
+        - in: query
+          name: search
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/PageResponse'
+    post:
+      tags: [Conversations]
+      security: [{ bearerAuth: [] }]
+      summary: Create conversation
+      responses:
+        '201':
+          description: Created
+
+  /conversations/{id}:
+    get:
+      tags: [Conversations]
+      security: [{ bearerAuth: [] }]
+      summary: Get conversation
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: OK
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /conversations/{id}/assign:
+    post:
+      tags: [Conversations]
+      security: [{ bearerAuth: [] }]
+      summary: Assign conversation
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_id:
+                  type: string
+                  format: uuid
+                  nullable: true
+      responses:
+        '200':
+          description: Assigned
+
+  /conversations/{id}/status:
+    patch:
+      tags: [Conversations]
+      security: [{ bearerAuth: [] }]
+      summary: Update conversation status
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [open, assigned, closed]
+      responses:
+        '200':
+          description: Updated
+
+  /conversations/{id}/messages:
+    get:
+      tags: [Messages]
+      security: [{ bearerAuth: [] }]
+      summary: List conversation messages
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: page_size
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        '200':
+          description: OK
+    post:
+      tags: [Messages]
+      security: [{ bearerAuth: [] }]
+      summary: Send message
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content: { type: string }
+      responses:
+        '201':
+          description: Sent
+
+  /dashboard:
+    get:
+      tags: [Dashboard]
+      security: [{ bearerAuth: [] }]
+      summary: Dashboard overview KPIs
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/DashboardOverview'
+
+  /onboarding:
+    get:
+      tags: [Onboarding]
+      security: [{ bearerAuth: [] }]
+      summary: Onboarding wizard snapshot
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/OnboardingSnapshot'
+
+  /onboarding/complete-step:
+    post:
+      tags: [Onboarding]
+      security: [{ bearerAuth: [] }]
+      summary: Mark onboarding step complete
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [step]
+              properties:
+                step:
+                  type: integer
+                  minimum: 1
+                  maximum: 6
+      responses:
+        '200':
+          description: Step completed

@@ -4,8 +4,22 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"strings"
 )
+
+var ErrWebhookVerificationFailed = errors.New("webhook verification failed")
+
+// VerifyMetaWebhookChallenge validates Meta GET webhook subscription handshake.
+func VerifyMetaWebhookChallenge(mode, token, challenge, expectedVerifyToken string) (string, error) {
+	if mode != "subscribe" || token != expectedVerifyToken {
+		return "", ErrWebhookVerificationFailed
+	}
+	if challenge == "" {
+		return "", ErrWebhookVerificationFailed
+	}
+	return challenge, nil
+}
 
 // VerifyMetaSignature validates Meta X-Hub-Signature-256 header against the raw POST body.
 // Meta signs the exact request bytes with the Facebook App Secret (not App ID, not verify token).

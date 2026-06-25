@@ -38,3 +38,16 @@ Phase 3
 [ ] Welcome Message
 [ ] Analytics
 [ ] Reports
+
+Phase 4 — Onboarding & Subscription
+
+[ ] Deferred — rolled back, billing not in scope
+
+Phase 5 — Team Management & RBAC (awaiting review)
+
+[x] Database migration (roles, permissions, role_permissions)
+[x] RBAC middleware and permission cache
+[x] Team management APIs (/api/v1/team/*)
+[x] Frontend team pages (users, roles, permissions, workspace)
+[x] Reusable components (UserTable, RoleBadge, PermissionMatrix, InviteUserModal, RoleSelector)
+[ ] Apply permission middleware to all existing modules (inbox, contacts, broadcast)
