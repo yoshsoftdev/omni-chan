@@ -4,4 +4,5 @@ use (
 	./shared
 	./services/backend-service
 	./services/webhook-service
+	./services/storage-service
 )

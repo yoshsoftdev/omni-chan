@@ -1,10 +1,13 @@
-.PHONY: run run-webhook run-backend test lint migrate-up migrate-down docker-up docker-down
+.PHONY: run run-webhook run-backend run-storage test lint migrate-up migrate-down docker-up docker-down
 
 run:
 	$(MAKE) -C services/backend-service run
 
 run-webhook:
 	cd services/webhook-service && go run ./cmd
+
+run-storage:
+	$(MAKE) -C services/storage-service run
 
 run-backend:
 	$(MAKE) -C services/backend-service run
@@ -13,6 +16,7 @@ test:
 	$(MAKE) -C services/backend-service test
 	cd shared && go test ./... -count=1
 	cd services/webhook-service && go test ./... -count=1
+	cd services/storage-service && go test ./... -count=1
 
 lint:
 	$(MAKE) -C services/backend-service lint

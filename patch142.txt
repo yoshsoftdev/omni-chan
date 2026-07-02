@@ -1,0 +1,51 @@
+*** Begin Patch
+*** Update File: /Users/yoshandy/labz/wtf/omni-chan-main/frontend/src/features/team/components/user-table.tsx
+@@
+-import { RoleSelector } from "@/features/team/components/role-selector";
+-import type { TeamMember, TeamRole } from "@/types/team";
++import type { TeamMember } from "@/types/team";
+@@
+   users,
+   canManage,
+-  onRoleChange,
+   onDeactivate,
+   onRemove,
+   onEdit,
++  onResendInvite,
+ }: {
+   users: TeamMember[];
+   canManage: boolean;
+-  onRoleChange: (member: TeamMember, role: TeamRole) => Promise<void>;
+   onDeactivate: (member: TeamMember) => Promise<void>;
+   onRemove: (member: TeamMember) => Promise<void>;
+   onEdit: (member: TeamMember) => void;
++  onResendInvite: (member: TeamMember) => Promise<void>;
+ }) {
+@@
+                 <td className="p-4 text-muted-foreground">{user.email}</td>
+                 <td className="p-4">
+-                  {canManage && !isOwner ? (
+-                    <div className="w-36">
+-                      <RoleSelector
+-                        value={user.role}
+-                        disabled={pendingId === user.id}
+-                        onChange={(role) => runAction(user.id, () => onRoleChange(user, role))}
+-                      />
+-                    </div>
+-                  ) : (
+-                    <RoleBadge role={user.role} />
+-                  )}
++                  <RoleBadge role={user.role} />
+                 </td>
+@@
+                             {(user.status ?? "active") === "invited" ? (
+                               <button
+                                 type="button"
+                                 className="block w-full rounded px-3 py-2 text-left text-sm hover:bg-accent"
+-                                onClick={() => setOpenMenuId(null)}
++                                onClick={() => runAction(user.id, () => onResendInvite(user))}
+                               >
+                                 Resend Invite
+                               </button>
+                             ) : null}
+*** End Patch

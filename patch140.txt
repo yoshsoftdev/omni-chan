@@ -1,0 +1,103 @@
+*** Begin Patch
+*** Add File: /Users/yoshandy/labz/wtf/omni-chan-main/frontend/src/features/team/mock-data.ts
++import type { TeamMember, TeamRole } from "@/types/team";
++
++export const MOCK_TEAM_MEMBERS: TeamMember[] = [
++  { id: "1", user_id: "u1", name: "Steven Fernandes", email: "steven@weebs.team", role: "owner", status: "active", last_active_at: "2026-06-17T10:45:00.000Z", created_at: "2026-06-17T10:45:00.000Z" },
++  { id: "2", user_id: "u2", name: "Aulia Putri", email: "aulia@weebs.team", role: "admin", status: "active", last_active_at: "2026-06-17T09:32:00.000Z", created_at: "2026-06-16T08:00:00.000Z" },
++  { id: "3", user_id: "u3", name: "Budi Setiawan", email: "budi@weebs.team", role: "supervisor", status: "active", last_active_at: "2026-06-16T17:21:00.000Z", created_at: "2026-06-16T08:10:00.000Z" },
++  { id: "4", user_id: "u4", name: "Dewi Lestari", email: "dewi@weebs.team", role: "agent", status: "active", last_active_at: "2026-06-16T14:11:00.000Z", created_at: "2026-06-16T08:20:00.000Z" },
++  { id: "5", user_id: "u5", name: "Ricky Saputra", email: "ricky@weebs.team", role: "agent", status: "invited", created_at: "2026-06-16T09:00:00.000Z" },
++  { id: "6", user_id: "u6", name: "Nadia Permata", email: "nadia@weebs.team", role: "agent", status: "active", last_active_at: "2026-06-15T13:00:00.000Z", created_at: "2026-06-15T08:00:00.000Z" },
++  { id: "7", user_id: "u7", name: "Arif Prasetyo", email: "arif@weebs.team", role: "supervisor", status: "inactive", last_active_at: "2026-06-12T10:20:00.000Z", created_at: "2026-06-12T08:00:00.000Z" },
++  { id: "8", user_id: "u8", name: "Maya Sari", email: "maya@weebs.team", role: "admin", status: "active", last_active_at: "2026-06-17T08:10:00.000Z", created_at: "2026-06-14T08:00:00.000Z" },
++  { id: "9", user_id: "u9", name: "Rizki Ramadhan", email: "rizki@weebs.team", role: "agent", status: "active", last_active_at: "2026-06-17T07:11:00.000Z", created_at: "2026-06-14T08:00:00.000Z" },
++  { id: "10", user_id: "u10", name: "Tania Wijaya", email: "tania@weebs.team", role: "agent", status: "invited", created_at: "2026-06-15T09:30:00.000Z" },
++  { id: "11", user_id: "u11", name: "Fajar Nugroho", email: "fajar@weebs.team", role: "agent", status: "active", last_active_at: "2026-06-16T09:50:00.000Z", created_at: "2026-06-13T08:00:00.000Z" },
++  { id: "12", user_id: "u12", name: "Lina Kartika", email: "lina@weebs.team", role: "supervisor", status: "active", last_active_at: "2026-06-17T06:41:00.000Z", created_at: "2026-06-13T08:00:00.000Z" },
++];
++
++export const ROLE_OVERVIEW: Array<{ role: TeamRole; title: string; description: string; bullets: string[] }> = [
++  { role: "owner", title: "Owner", description: "Full access to all features.", bullets: ["Billing", "Workspace Settings", "Users", "Campaigns"] },
++  { role: "admin", title: "Admin", description: "Manage users and operations.", bullets: ["Contacts", "Templates", "Campaigns", "Reports"] },
++  { role: "supervisor", title: "Supervisor", description: "Manage conversations and agents.", bullets: ["Assignments", "Reports", "Monitoring"] },
++  { role: "agent", title: "Agent", description: "Reply conversations only.", bullets: ["Assigned Inbox", "Contacts View"] },
++];
++
++export const PERMISSION_ROWS = [
++  "Inbox & Conversations",
++  "Contacts",
++  "Templates",
++  "Broadcast Campaigns",
++  "Reports",
++  "Billing",
++  "Workspace Settings",
++] as const;
++
++export const PERMISSION_BY_ROLE: Record<TeamRole, Record<(typeof PERMISSION_ROWS)[number], boolean>> = {
++  owner: {
++    "Inbox & Conversations": true,
++    Contacts: true,
++    Templates: true,
++    "Broadcast Campaigns": true,
++    Reports: true,
++    Billing: true,
++    "Workspace Settings": true,
++  },
++  admin: {
++    "Inbox & Conversations": true,
++    Contacts: true,
++    Templates: true,
++    "Broadcast Campaigns": true,
++    Reports: true,
++    Billing: false,
++    "Workspace Settings": false,
++  },
++  supervisor: {
++    "Inbox & Conversations": true,
++    Contacts: true,
++    Templates: false,
++    "Broadcast Campaigns": false,
++    Reports: true,
++    Billing: false,
++    "Workspace Settings": false,
++  },
++  agent: {
++    "Inbox & Conversations": true,
++    Contacts: true,
++    Templates: false,
++    "Broadcast Campaigns": false,
++    Reports: false,
++    Billing: false,
++    "Workspace Settings": false,
++  },
++};
++
++export const PERMISSION_PREVIEW: Record<TeamRole, string[]> = {
++  owner: ["Inbox & Conversations", "Contacts", "Templates", "Broadcast Campaigns", "Reports", "Billing", "Workspace Settings"],
++  admin: ["Inbox & Conversations", "Contacts", "Templates", "Broadcast Campaigns", "Reports"],
++  supervisor: ["Inbox & Conversations", "Contacts", "Broadcast Campaigns", "Reports"],
++  agent: ["Inbox & Conversations", "Contacts"],
++};
++
++export const MOCK_WORKSPACE = {
++  id: "w1",
++  name: "Weebs Team",
++  slug: "weebs-team",
++  timezone: "Asia/Jakarta (GMT+7)",
++  country: "Indonesia",
++  ownerName: "Steven Fernandes",
++  ownerId: "u1",
++  createdAt: "June 17, 2026",
++  status: "Active",
++  plan: "Enterprise",
++  renewalDate: "July 17, 2026",
++};
++
++export const MOCK_WORKSPACE_ACTIVITY = [
++  { id: "a1", type: "invite", text: "Aulia Putri was invited to the workspace", time: "June 17, 2026, 09:32 AM" },
++  { id: "a2", type: "role", text: "Budi Setiawan changed role from Agent to Supervisor", time: "June 16, 2026, 05:21 PM" },
++  { id: "a3", type: "wa", text: "WhatsApp number +62 812-3456-7890 was connected", time: "June 16, 2026, 02:11 PM" },
++  { id: "a4", type: "template", text: "Template 'Promo Juni' was approved", time: "June 15, 2026, 11:45 AM" },
++];
+*** End Patch

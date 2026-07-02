@@ -1,0 +1,49 @@
+*** Begin Patch
+*** Update File: /Users/yoshandy/labz/wtf/omni-chan-main/frontend/src/features/team/components/team-users-page.tsx
+@@
+   MessageSquareText,
+   Plus,
+-  Search, 
++  Search,
+@@
+-  function formatLastActive(member: TeamMember) {
+-    if (member.status === "invited") return "*";
+-    if (!member.last_active_at) return "—";
+-    return new Date(member.last_active_at).toLocaleString(undefined, {
+-      month: "short",
+-      day: "numeric",
+-      hour: "2-digit",
+-      minute: "2-digit",
+-    });
+-  }
+-
+   return (
+@@
+               <UserTable
+-                users={pagedUsers.map((m) => ({ ...m, last_active_at: formatLastActive(m) } as TeamMember))}
++                users={pagedUsers}
+@@
+               <div className="space-y-2 text-sm">
+                 {PERMISSION_PREVIEW[drawerRole].map((label) => (
+-                  <div key={item.label} className="flex items-center justify-between">
++                  <div key={label} className="flex items-center justify-between">
+                     <span className="inline-flex items-center gap-2">
+-                      {(label.includes("Inbox") ? MessageSquareText : label.includes("Contacts") ? Contact : label.includes("Templates") ? Bell : Megaphone)({
+-                        className: "h-4 w-4 text-muted-foreground",
+-                      })}
+-                      {item.label}
++                      {label.includes("Inbox") ? (
++                        <MessageSquareText className="h-4 w-4 text-muted-foreground" />
++                      ) : label.includes("Contacts") ? (
++                        <Contact className="h-4 w-4 text-muted-foreground" />
++                      ) : label.includes("Templates") ? (
++                        <Bell className="h-4 w-4 text-muted-foreground" />
++                      ) : (
++                        <Megaphone className="h-4 w-4 text-muted-foreground" />
++                      )}
++                      {label}
+                     </span>
+                     <span className="text-emerald-600">●</span>
+                   </div>
+                 ))}
+*** End Patch

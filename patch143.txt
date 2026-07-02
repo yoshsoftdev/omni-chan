@@ -1,0 +1,495 @@
+*** Begin Patch
+*** Update File: /Users/yoshandy/labz/wtf/omni-chan-main/frontend/src/features/team/components/team-users-page.tsx
+@@
+ "use client";
+ 
+ import Link from "next/link";
+-import { useCallback, useEffect, useState } from "react";
++import { useMemo, useState } from "react";
+ import {
+   Bell,
+-  ChevronRight,
+   Contact,
+   Crown,
++  CheckCircle2,
++  AlertTriangle,
+   Megaphone,
+   MessageSquareText,
+   Plus,
+-  Search,
++  Search, 
+   Shield,
+   UserCircle2,
+   Users,
+   X,
+ } from "lucide-react";
+@@
+ import { Button } from "@/components/ui/button";
+ import { Input } from "@/components/ui/input";
+ import { InviteUserModal } from "@/features/team/components/invite-user-modal";
+ import { RoleSelector } from "@/features/team/components/role-selector";
+ import { UserTable } from "@/features/team/components/user-table";
+ import { usePermission } from "@/features/team/hooks/use-permission";
+ import { RoleBadge } from "@/features/team/components/role-badge";
+-import { teamService } from "@/features/team/services/team.service";
+-import type { TeamMember, TeamRole } from "@/types/team";
++import { MOCK_TEAM_MEMBERS, PERMISSION_BY_ROLE, PERMISSION_PREVIEW, PERMISSION_ROWS, ROLE_OVERVIEW } from "@/features/team/mock-data";
++import type { TeamMember, TeamRole, MemberStatus } from "@/types/team";
+ 
+ export function TeamUsersPage() {
+   const { can } = usePermission();
+   const canManage = can("user.invite");
+-  const [users, setUsers] = useState<TeamMember[]>([]);
++  const [users, setUsers] = useState<TeamMember[]>(MOCK_TEAM_MEMBERS);
+   const [search, setSearch] = useState("");
+   const [roleFilter, setRoleFilter] = useState("");
+-  const [loading, setLoading] = useState(true);
++  const [page, setPage] = useState(1);
+   const [inviteOpen, setInviteOpen] = useState(false);
+-  const [error, setError] = useState<string | null>(null);
+   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
+   const [drawerRole, setDrawerRole] = useState<TeamRole>("agent");
++  const [drawerName, setDrawerName] = useState("");
++  const [drawerEmail, setDrawerEmail] = useState("");
++  const [confirmDeactivateOpen, setConfirmDeactivateOpen] = useState(false);
++  const [selectedRoleCard, setSelectedRoleCard] = useState<TeamRole>("owner");
++  const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
+ 
+-  const load = useCallback(async () => {
+-    setError(null);
+-    try {
+-      const data = await teamService.listUsers({
+-        search: search || undefined,
+-        role: roleFilter || undefined,
+-      });
+-      const fallbackUsers: TeamMember[] = data.length
+-        ? data
+-        : [
+-            {
+-              id: "1",
+-              user_id: "u1",
+-              name: "Steven Fernandes",
+-              email: "steven@weebs.team",
+-              role: "owner",
+-              status: "active",
+-              last_active_at: new Date().toISOString(),
+-              created_at: new Date().toISOString(),
+-            },
+-            {
+-              id: "2",
+-              user_id: "u2",
+-              name: "Aulia Putri",
+-              email: "aulia@weebs.team",
+-              role: "admin",
+-              status: "active",
+-              last_active_at: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+-              created_at: new Date().toISOString(),
+-            },
+-            {
+-              id: "3",
+-              user_id: "u3",
+-              name: "Budi Setiawan",
+-              email: "budi@weebs.team",
+-              role: "supervisor",
+-              status: "active",
+-              last_active_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+-              created_at: new Date().toISOString(),
+-            },
+-            {
+-              id: "4",
+-              user_id: "u4",
+-              name: "Dewi Lestari",
+-              email: "dewi@weebs.team",
+-              role: "agent",
+-              status: "active",
+-              last_active_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+-              created_at: new Date().toISOString(),
+-            },
+-            {
+-              id: "5",
+-              user_id: "u5",
+-              name: "Ricky Saputra",
+-              email: "ricky@weebs.team",
+-              role: "agent",
+-              status: "invited",
+-              created_at: new Date().toISOString(),
+-            },
+-          ];
+-      setUsers(fallbackUsers);
+-    } catch (err) {
+-      setError(err instanceof Error ? err.message : "Failed to load users");
+-    } finally {
+-      setLoading(false);
+-    }
+-  }, [search, roleFilter]);
+-
+-  useEffect(() => {
+-    const timer = setTimeout(() => {
+-      load();
+-    }, 250);
+-    return () => clearTimeout(timer);
+-  }, [load]);
++  const filteredUsers = useMemo(() => {
++    const q = search.trim().toLowerCase();
++    return users.filter((u) => {
++      const byRole = roleFilter ? u.role === roleFilter : true;
++      const byQuery = q
++        ? u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
++        : true;
++      return byRole && byQuery;
++    });
++  }, [users, search, roleFilter]);
++
++  const pageSize = 5;
++  const total = filteredUsers.length;
++  const totalPages = Math.max(1, Math.ceil(total / pageSize));
++  const currentPage = Math.min(page, totalPages);
++  const startIndex = (currentPage - 1) * pageSize;
++  const endIndex = Math.min(startIndex + pageSize, total);
++  const pagedUsers = filteredUsers.slice(startIndex, endIndex);
++
++  function notify(type: "success" | "error", message: string) {
++    setToast({ type, message });
++    setTimeout(() => setToast(null), 2400);
++  }
++
++  function onSearchChange(value: string) {
++    setSearch(value);
++    setPage(1);
++  }
++
++  function onRoleFilterChange(value: string) {
++    setRoleFilter(value);
++    setPage(1);
++  }
++
++  function formatLastActive(member: TeamMember) {
++    if (member.status === "invited") return "*";
++    if (!member.last_active_at) return "—";
++    return new Date(member.last_active_at).toLocaleString(undefined, {
++      month: "short",
++      day: "numeric",
++      hour: "2-digit",
++      minute: "2-digit",
++    });
++  }
+ 
+   return (
+     <div className="space-y-7">
++      {toast ? (
++        <div className="fixed right-6 top-6 z-[60]">
++          <div
++            className={[
++              "inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm shadow-lg",
++              toast.type === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-red-200 bg-red-50 text-red-700",
++            ].join(" ")}
++          >
++            {toast.type === "success" ? <CheckCircle2 className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
++            {toast.message}
++          </div>
++        </div>
++      ) : null}
++
+       <div>
+         <h1 className="text-2xl font-semibold tracking-tight">Team Management</h1>
+         <p className="text-muted-foreground">Manage your team members and workspace settings.</p>
+       </div>
+@@
+               <Input
+                 className="pl-9"
+                 placeholder="Search by name or email..."
+                 value={search}
+-                onChange={(e) => setSearch(e.target.value)}
++                onChange={(e) => onSearchChange(e.target.value)}
+               />
+             </div>
+             <select
+               className="h-10 rounded-md border border-input bg-background px-3 text-sm capitalize"
+               value={roleFilter}
+-              onChange={(e) => setRoleFilter(e.target.value)}
++              onChange={(e) => onRoleFilterChange(e.target.value)}
+             >
+               <option value="">All Roles</option>
+               <option value="owner">Owner</option>
+@@
+         </div>
+ 
+         <div className="mt-4">
+-          {loading ? (
+-            <p className="text-sm text-muted-foreground">Loading users...</p>
+-          ) : error ? (
+-            <p className="text-sm text-destructive">{error}</p>
++          {filteredUsers.length === 0 ? (
++            <div className="rounded-lg border border-dashed p-10 text-center">
++              <p className="text-sm text-muted-foreground">No members match your search/filter.</p>
++            </div>
+           ) : (
+             <>
+               <UserTable
+-                users={users}
++                users={pagedUsers.map((m) => ({ ...m, last_active_at: formatLastActive(m) } as TeamMember))}
+                 canManage={canManage}
+                 onEdit={(member) => {
+                   setEditingMember(member);
+                   setDrawerRole(member.role);
++                  setDrawerName(member.name);
++                  setDrawerEmail(member.email);
+                 }}
+-                onRoleChange={async (member, role) => {
+-                  await teamService.updateUserRole(member.id, role);
+-                  await load();
++                onResendInvite={async (member) => {
++                  notify("success", `Invitation resent to ${member.email}`);
+                 }}
+                 onDeactivate={async (member) => {
+-                  await teamService.deactivateUser(member.id);
+-                  await load();
++                  setEditingMember(member);
++                  setConfirmDeactivateOpen(true);
+                 }}
+                 onRemove={async (member) => {
+                   if (!confirm(`Remove ${member.name} from the workspace?`)) return;
+-                  await teamService.removeUser(member.id);
+-                  await load();
++                  setUsers((prev) => prev.filter((u) => u.id !== member.id));
++                  notify("success", `${member.name} removed`);
+                 }}
+               />
+               <div className="mt-3 flex items-center justify-between text-sm text-muted-foreground">
+-                <span>Showing 1 to {Math.min(5, users.length)} of 12 members</span>
++                <span>
++                  Showing {total === 0 ? 0 : startIndex + 1} to {endIndex} of {total} members
++                </span>
+                 <div className="flex items-center gap-2">
+-                  <button className="h-8 w-8 rounded border">‹</button>
+-                  <button className="h-8 w-8 rounded border bg-primary text-primary-foreground">1</button>
+-                  <button className="h-8 w-8 rounded border">2</button>
+-                  <button className="h-8 w-8 rounded border">3</button>
+-                  <button className="h-8 w-8 rounded border">›</button>
++                  <button
++                    className="h-8 rounded border px-2 disabled:opacity-50"
++                    disabled={currentPage === 1}
++                    onClick={() => setPage((p) => Math.max(1, p - 1))}
++                  >
++                    Previous
++                  </button>
++                  {Array.from({ length: totalPages }).map((_, idx) => {
++                    const p = idx + 1;
++                    return (
++                      <button
++                        key={p}
++                        className={[
++                          "h-8 w-8 rounded border",
++                          p === currentPage ? "bg-primary text-primary-foreground" : "",
++                        ].join(" ")}
++                        onClick={() => setPage(p)}
++                      >
++                        {p}
++                      </button>
++                    );
++                  })}
++                  <button
++                    className="h-8 rounded border px-2 disabled:opacity-50"
++                    disabled={currentPage === totalPages}
++                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
++                  >
++                    Next
++                  </button>
+                 </div>
+               </div>
+             </>
+           )}
+         </div>
+@@
+-            {[
+-              { icon: Crown, role: "owner", text: "Full access to all features, billing, and workspace settings." },
+-              { icon: Shield, role: "admin", text: "Manage users, templates, contacts, campaigns, and view reports." },
+-              { icon: Users, role: "supervisor", text: "View all conversations, assign agents, and view reports." },
+-              { icon: MessageSquareText, role: "agent", text: "View and reply assigned conversations only." },
+-            ].map((item) => (
+-              <div key={item.role} className="rounded-lg border bg-background p-3">
++            {ROLE_OVERVIEW.map((item) => {
++              const Icon = item.role === "owner" ? Crown : item.role === "admin" ? Shield : item.role === "supervisor" ? Users : MessageSquareText;
++              const selected = selectedRoleCard === item.role;
++              return (
++              <button
++                key={item.role}
++                type="button"
++                onClick={() => setSelectedRoleCard(item.role)}
++                className={[
++                  "w-full rounded-lg border bg-background p-3 text-left",
++                  selected ? "border-primary ring-1 ring-primary/30" : "",
++                ].join(" ")}
++              >
+                 <div className="flex items-center gap-2">
+-                  <item.icon className="h-4 w-4 text-muted-foreground" />
+-                  <RoleBadge role={item.role} />
++                  <Icon className="h-4 w-4 text-muted-foreground" />
++                  <RoleBadge role={item.role} />
+                 </div>
+-                <p className="mt-2 text-xs text-muted-foreground">{item.text}</p>
+-              </div>
+-            ))}
++                <p className="mt-2 text-xs text-muted-foreground">{item.description}</p>
++                <div className="mt-2 flex flex-wrap gap-1">
++                  {item.bullets.map((b) => (
++                    <span key={b} className="rounded bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
++                      {b}
++                    </span>
++                  ))}
++                </div>
++              </button>
++            )})}
+           </div>
+         </div>
+ 
+         <div className="rounded-xl border bg-card p-5 shadow-sm">
+@@
+                 {[
+-                  ["Inbox & Conversations", true, true, true, true],
+-                  ["Contacts", true, true, true, false],
+-                  ["Templates", true, true, false, false],
+-                  ["Broadcast Campaigns", true, true, false, false],
+-                  ["Reports", true, true, true, false],
+-                  ["Billing", true, false, false, false],
+-                  ["Workspace Settings", true, false, false, false],
+-                ].map((row) => (
+-                  <tr key={row[0] as string} className="border-b last:border-0">
+-                    <td className="p-3">{row[0] as string}</td>
+-                    {(row.slice(1) as boolean[]).map((allowed, i) => (
+-                      <td key={`${row[0]}-${i}`} className="p-3 text-center">
++                  ...PERMISSION_ROWS,
++                ].map((rowName) => (
++                  <tr key={rowName} className="border-b last:border-0">
++                    <td className="p-3">{rowName}</td>
++                    {(["owner", "admin", "supervisor", "agent"] as TeamRole[]).map((role) => {
++                      const allowed = PERMISSION_BY_ROLE[role][rowName];
++                      return (
++                      <td key={`${rowName}-${role}`} className={["p-3 text-center", selectedRoleCard === role ? "bg-primary/5" : ""].join(" ")}>
+                         <span className={allowed ? "text-emerald-600" : "text-muted-foreground"}>
+                           {allowed ? "✓" : "—"}
+                         </span>
+                       </td>
+-                    ))}
++                    )})}
+                   </tr>
+                 ))}
+               </tbody>
+             </table>
+@@
+         onClose={() => setInviteOpen(false)}
+-        onInvited={load}
++        onInvited={() => {}}
+         onSubmit={async (input) => {
+-          await teamService.inviteUser(input);
++          const now = new Date().toISOString();
++          const newMember: TeamMember = {
++            id: String(Date.now()),
++            user_id: `u-${Date.now()}`,
++            name: input.name,
++            email: input.email,
++            role: input.role,
++            status: "invited",
++            created_at: now,
++          };
++          setUsers((prev) => [newMember, ...prev]);
++          setPage(1);
++          notify("success", "Invitation sent successfully");
+         }}
+       />
+ 
+       {editingMember ? (
+@@
+               <div>
+                 <label className="mb-1 block text-sm">Full Name</label>
+-                <Input value={editingMember.name} readOnly />
++                <Input value={drawerName} onChange={(e) => setDrawerName(e.target.value)} />
+               </div>
+               <div>
+                 <label className="mb-1 block text-sm">Email</label>
+-                <Input value={editingMember.email} readOnly />
++                <Input value={drawerEmail} onChange={(e) => setDrawerEmail(e.target.value)} />
+               </div>
+               <div>
+                 <label className="mb-1 block text-sm">Role</label>
+@@
+               <div className="space-y-2 text-sm">
+-                {[
+-                  { icon: MessageSquareText, label: "Inbox & Conversations" },
+-                  { icon: Contact, label: "Contacts" },
+-                  { icon: Bell, label: "Templates" },
+-                  { icon: Megaphone, label: "Broadcast Campaigns" },
+-                ].map((item) => (
++                {PERMISSION_PREVIEW[drawerRole].map((label) => (
+                   <div key={item.label} className="flex items-center justify-between">
+                     <span className="inline-flex items-center gap-2">
+-                      <item.icon className="h-4 w-4 text-muted-foreground" />
++                      {(label.includes("Inbox") ? MessageSquareText : label.includes("Contacts") ? Contact : label.includes("Templates") ? Bell : Megaphone)({
++                        className: "h-4 w-4 text-muted-foreground",
++                      })}
+                       {item.label}
+                     </span>
+                     <span className="text-emerald-600">●</span>
+                   </div>
+                 ))}
+@@
+             <div className="mt-6 space-y-2">
+-              <Button className="w-full" onClick={() => setEditingMember(null)}>
++              <Button
++                className="w-full"
++                onClick={() => {
++                  setUsers((prev) =>
++                    prev.map((u) =>
++                      u.id === editingMember.id ? { ...u, name: drawerName, email: drawerEmail, role: drawerRole } : u,
++                    ),
++                  );
++                  setEditingMember(null);
++                  notify("success", "Member updated");
++                }}
++              >
+                 Save Changes
+               </Button>
+-              <Button variant="outline" className="w-full border-red-200 text-red-600">
++              <Button
++                variant="outline"
++                className="w-full border-red-200 text-red-600"
++                onClick={() => setConfirmDeactivateOpen(true)}
++              >
+                 Deactivate Member
+               </Button>
+             </div>
+           </div>
+         </div>
+       ) : null}
++
++      {confirmDeactivateOpen && editingMember ? (
++        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4">
++          <div className="w-full max-w-sm rounded-lg border bg-card p-5">
++            <h4 className="text-base font-semibold">Deactivate this member?</h4>
++            <p className="mt-1 text-sm text-muted-foreground">
++              {editingMember.name} will lose access until reactivated.
++            </p>
++            <div className="mt-4 flex justify-end gap-2">
++              <Button variant="outline" onClick={() => setConfirmDeactivateOpen(false)}>
++                Cancel
++              </Button>
++              <Button
++                onClick={() => {
++                  setUsers((prev) =>
++                    prev.map((u) => (u.id === editingMember.id ? { ...u, status: "inactive" as MemberStatus } : u)),
++                  );
++                  setConfirmDeactivateOpen(false);
++                  setEditingMember(null);
++                  notify("success", "Member deactivated");
++                }}
++              >
++                Deactivate
++              </Button>
++            </div>
++          </div>
++        </div>
++      ) : null}
+     </div>
+   );
+ }
+*** End Patch

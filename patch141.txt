@@ -1,0 +1,11 @@
+*** Begin Patch
+*** Update File: /Users/yoshandy/labz/wtf/omni-chan-main/frontend/src/features/team/components/invite-user-modal.tsx
+@@
+             <Input
+               id="invite-name"
+               value={name}
+               onChange={(e) => setName(e.target.value)}
+               placeholder="Jane Doe"
++              required
+             />
+*** End Patch

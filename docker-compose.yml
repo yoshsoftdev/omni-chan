@@ -51,6 +51,7 @@ services:
       HTTP_PORT: 8090
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/omni_chan?sslmode=disable
       REDIS_URL: redis://redis:6379/0
+      STORAGE_SERVICE_URL: http://storage-service:8082
       NATS_URL: nats://nats:4222
       NATS_STREAM_NAME: WEBHOOK_EVENTS
       NATS_CONSUMER_ENABLED: "true"
@@ -67,6 +68,29 @@ services:
       - postgres
       - redis
       - nats
+      - storage-service
+
+  storage-service:
+    build:
+      context: .
+      dockerfile: services/storage-service/Dockerfile
+    ports:
+      - "8082:8082"
+    environment:
+      APP_ENV: production
+      HTTP_PORT: 8082
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/omni_chan?sslmode=disable
+      STORAGE_DRIVER: local
+      STORAGE_LOCAL_PATH: /data/storage
+      STORAGE_PUBLIC_BASE_URL: http://storage-service:8082
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-change-me-internal-token}
+    volumes:
+      - storage_data:/data/storage
+    depends_on:
+      - postgres
 
 volumes:
   postgres_data:
+  storage_data:
