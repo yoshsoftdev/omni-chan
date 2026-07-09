@@ -18,6 +18,7 @@ const (
 	TypeMessageStatusDelivered = "message.status.delivered"
 	TypeMessageStatusRead     = "message.status.read"
 	TypeMessageStatusFailed   = "message.status.failed"
+	TypeMessageDeleted        = "message.deleted"
 	TypeTemplateUpdated       = "template.updated"
 	TypeChannelUpdated        = "channel.updated"
 )
@@ -47,6 +48,8 @@ func MetaSubject(eventType string) string {
 		return "meta.message.status.read"
 	case TypeMessageStatusFailed:
 		return "meta.message.status.failed"
+	case TypeMessageDeleted:
+		return "meta.message.deleted"
 	case TypeTemplateUpdated:
 		return "meta.template.updated"
 	case TypeChannelUpdated:
@@ -74,6 +77,8 @@ func ConsumerDLQCategory(eventType string) string {
 	case TypeMessageStatusSent, TypeMessageStatusDelivered,
 		TypeMessageStatusRead, TypeMessageStatusFailed:
 		return "status"
+	case TypeMessageDeleted:
+		return "message"
 	case TypeTemplateUpdated:
 		return "template"
 	case TypeChannelUpdated:
