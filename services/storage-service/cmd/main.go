@@ -63,6 +63,7 @@ func main() {
 		AppName:      cfg.App.AppName + "-storage",
 		ReadTimeout:  cfg.HTTP.ReadTimeout,
 		WriteTimeout: cfg.HTTP.WriteTimeout,
+		BodyLimit:    100 * 1024 * 1024,
 	})
 	app.Use(recover.New())
 	app.Use(requestid.New())
