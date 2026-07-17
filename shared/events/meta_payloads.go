@@ -4,12 +4,16 @@ import "encoding/json"
 
 // MetaMessagePayload is the canonical payload for message.received events.
 type MetaMessagePayload struct {
+	Platform      string          `json:"platform,omitempty"`
+	IGUserID      string          `json:"ig_user_id,omitempty"`
 	WABAID        string          `json:"waba_id"`
 	PhoneNumberID string          `json:"phone_number_id"`
 	WAMID         string          `json:"wamid"`
 	ReplyToWAMID  string          `json:"reply_to_wamid,omitempty"`
 	MessageType   string          `json:"message_type"`
 	From          string          `json:"from"`
+	To            string          `json:"to,omitempty"`
+	IsEcho        bool            `json:"is_echo,omitempty"`
 	ContactWAID   string          `json:"contact_wa_id,omitempty"`
 	ContactName   string          `json:"contact_name,omitempty"`
 	Timestamp     string          `json:"timestamp,omitempty"`

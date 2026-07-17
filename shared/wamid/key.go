@@ -1,22 +1,28 @@
 package wamid
 
 import (
+	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"strings"
 )
 
 const minMessageKeyLen = 16
+const maxStoredKeyLen = 32
 
 // ExtractMessageKey returns the stable WhatsApp message token embedded in a wamid.
 // Meta may send different wamid prefixes for the same message (phone vs user_id),
 // but the trailing hex token inside the decoded payload stays the same.
+//
+// Non-WhatsApp ids (e.g. Instagram mid) are stored as a lowercased value when short,
+// or a 32-char SHA-256 prefix when longer than VARCHAR(32) wamid_key.
 func ExtractMessageKey(raw string) string {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
 		return ""
 	}
 	if !strings.HasPrefix(raw, "wamid.") {
-		return strings.ToLower(raw)
+		return shortenExternalKey(strings.ToLower(raw))
 	}
 
 	body := strings.TrimPrefix(raw, "wamid.")
@@ -25,6 +31,14 @@ func ExtractMessageKey(raw string) string {
 		return ""
 	}
 	return extractHexToken(decoded)
+}
+
+func shortenExternalKey(raw string) string {
+	if len(raw) <= maxStoredKeyLen {
+		return raw
+	}
+	sum := sha256.Sum256([]byte(raw))
+	return hex.EncodeToString(sum[:16])
 }
 
 // KeysMatch reports whether two wamid values refer to the same WhatsApp message.

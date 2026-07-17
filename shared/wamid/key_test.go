@@ -36,3 +36,20 @@ func TestExtractMessageKey_Empty(t *testing.T) {
 		t.Fatal("expected empty key")
 	}
 }
+
+func TestExtractMessageKey_LongInstagramMID(t *testing.T) {
+	mid := "aWdfZAG1faXRlbToxOklGRXh0OjE3ODQxNDc0MTU5NzAxMDE4OjE4MjU4NzM5MjM3MjQ1MzU0OjE3MjEyMzQ1Njc4OWFiY2RlZgZDZD"
+	key := ExtractMessageKey(mid)
+	if key == "" {
+		t.Fatal("expected non-empty key")
+	}
+	if len(key) > 32 {
+		t.Fatalf("key length %d exceeds wamid_key VARCHAR(32)", len(key))
+	}
+	if ExtractMessageKey(mid) != key {
+		t.Fatal("expected stable hash for same mid")
+	}
+	if !KeysMatch(mid, mid) {
+		t.Fatal("expected KeysMatch for identical long mid")
+	}
+}

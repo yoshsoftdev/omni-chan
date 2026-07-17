@@ -15,6 +15,7 @@ tags:
   - name: Channels
   - name: Templates
   - name: Contacts
+  - name: Providers
   - name: Segments
   - name: Tags
   - name: Campaigns
@@ -92,6 +93,142 @@ components:
             type: object
         pagination:
           $ref: '#/components/schemas/PaginationMeta'
+
+    ProviderProfile:
+      type: object
+      required:
+        [id, team_id, contact_id, provider, provider_user_id, connected_at, status, is_source_of_truth]
+      properties:
+        id: { type: string, format: uuid }
+        team_id: { type: string, format: uuid }
+        contact_id: { type: string, format: uuid }
+        provider:
+          type: string
+          description: Extensible provider key such as whatsapp, instagram, messenger, telegram, or email.
+        provider_user_id: { type: string }
+        channel_id: { type: string, format: uuid, nullable: true }
+        display_name: { type: string }
+        username: { type: string }
+        phone: { type: string }
+        avatar_url: { type: string, format: uri }
+        email: { type: string, format: email }
+        metadata: { type: object, additionalProperties: true }
+        connected_at: { type: string, format: date-time }
+        last_synced_at: { type: string, format: date-time, nullable: true }
+        last_observed_at: { type: string, format: date-time, nullable: true }
+        status:
+          type: string
+          enum: [active, unavailable, unlinked]
+        is_source_of_truth: { type: boolean }
+        conversation_ids:
+          type: array
+          items: { type: string, format: uuid }
+
+    LinkedContact:
+      type: object
+      required: [link_id, id, contact_name, customer_name, phone, provider_kinds, linked_at]
+      properties:
+        link_id: { type: string, format: uuid }
+        id: { type: string, format: uuid }
+        contact_name: { type: string }
+        customer_name: { type: string }
+        phone: { type: string }
+        email: { type: string, format: email, nullable: true }
+        avatar_url: { type: string, format: uri, nullable: true }
+        provider_kinds:
+          type: array
+          items: { type: string }
+        linked_at: { type: string, format: date-time }
+
+    ContactLinkRequest:
+      type: object
+      required: [contact_id]
+      properties:
+        contact_id: { type: string, format: uuid }
+
+    ProviderLinkRequest:
+      type: object
+      required: [contact_id]
+      properties:
+        contact_id: { type: string, format: uuid }
+        reason: { type: string, maxLength: 500 }
+
+    ProviderUnlinkRequest:
+      type: object
+      properties:
+        reason: { type: string, maxLength: 500 }
+
+    ProviderActivity:
+      type: object
+      required: [id, contact_id, type, description, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        contact_id: { type: string, format: uuid }
+        provider_profile_id: { type: string, format: uuid, nullable: true }
+        type:
+          type: string
+          enum: [provider_linked, provider_unlinked, source_of_truth_changed]
+        actor_id: { type: string, format: uuid, nullable: true }
+        actor_name: { type: string }
+        description: { type: string }
+        metadata: { type: object, additionalProperties: true }
+        created_at: { type: string, format: date-time }
+
+    ChannelTypeInfo:
+      type: object
+      required: [type, display_name, supported]
+      properties:
+        type:
+          type: string
+          enum: [whatsapp, instagram, messenger, telegram, email]
+          example: whatsapp
+        display_name:
+          type: string
+          example: WhatsApp Business
+        supported:
+          type: boolean
+          example: true
+
+    ChannelStatusEntry:
+      type: object
+      required: [type, connected]
+      properties:
+        type:
+          type: string
+          enum: [whatsapp, instagram]
+        connected:
+          type: boolean
+        display_name:
+          type: string
+          example: Sales Line 1
+
+    ChannelStatusReport:
+      type: object
+      required: [channels]
+      properties:
+        channels:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChannelStatusEntry'
+
+    InstagramChannelStatus:
+      type: object
+      required: [connected]
+      properties:
+        connected:
+          type: boolean
+          example: false
+        username:
+          type: string
+          example: brand.ig
+        account_type:
+          type: string
+          enum: [BUSINESS, MEDIA_CREATOR]
+          example: BUSINESS
+        token_expiry:
+          type: string
+          format: date-time
+          nullable: true
 
     ReadinessResponse:
       type: object
@@ -481,6 +618,151 @@ paths:
         '201':
           description: Created
 
+  /channels/types:
+    get:
+      tags: [Channels]
+      security: [{ bearerAuth: [] }]
+      summary: List supported channel types
+      description: Returns channel platform capabilities. Does not perform OAuth or Meta calls.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ChannelTypeInfo'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /channels/status:
+    get:
+      tags: [Channels]
+      security: [{ bearerAuth: [] }]
+      summary: Workspace channel connection status
+      description: WhatsApp status is derived from existing channels rows. Instagram is not connected until implemented.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ChannelStatusReport'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /channels/instagram/status:
+    get:
+      tags: [Channels]
+      security: [{ bearerAuth: [] }]
+      summary: Instagram connection status
+      description: Returns Instagram Business Login connection state for the workspace.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/InstagramChannelStatus'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /channels/instagram/connect-url:
+    get:
+      tags: [Channels]
+      security: [{ bearerAuth: [] }]
+      summary: Get Instagram Business Login authorization URL
+      parameters:
+        - in: query
+          name: return_url
+          schema:
+            type: string
+          description: Optional browser URL to redirect after OAuth callback completes.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        required: [authorization_url, state, expires_at]
+                        properties:
+                          authorization_url:
+                            type: string
+                            example: https://www.instagram.com/oauth/authorize?client_id=...
+                          state:
+                            type: string
+                          expires_at:
+                            type: string
+                            format: date-time
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /channels/instagram/callback:
+    get:
+      tags: [Channels]
+      summary: Instagram Business Login OAuth callback
+      description: |
+        Public OAuth redirect target. Exchanges the authorization code, stores encrypted credentials,
+        creates or updates the Instagram channel, then redirects to return_url when provided.
+      parameters:
+        - in: query
+          name: code
+          schema:
+            type: string
+        - in: query
+          name: state
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: error
+          schema:
+            type: string
+        - in: query
+          name: error_description
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Connected (JSON response when return_url is not set)
+        '302':
+          description: Redirect to return_url after success or validation error
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /channels/instagram/connection:
+    delete:
+      tags: [Channels]
+      security: [{ bearerAuth: [] }]
+      summary: Disconnect Instagram channel for the workspace
+      responses:
+        '200':
+          description: OK
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
   /channels/{id}:
     get:
       tags: [Channels]
@@ -604,6 +886,186 @@ paths:
       responses:
         '200':
           description: Deleted
+
+  /contacts/{id}/providers:
+    get:
+      tags: [Providers]
+      security: [{ bearerAuth: [] }]
+      summary: List Provider Profiles linked to a Contact
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Provider Profiles
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  message: { type: string }
+                  data:
+                    type: object
+                    properties:
+                      providers:
+                        type: array
+                        items: { $ref: '#/components/schemas/ProviderProfile' }
+
+  /contacts/{id}/activities:
+    get:
+      tags: [Providers]
+      security: [{ bearerAuth: [] }]
+      summary: List provider ownership activities for a Contact
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+        - in: query
+          name: limit
+          schema: { type: integer, minimum: 1, maximum: 200, default: 100 }
+      responses:
+        '200':
+          description: Provider activities
+
+  /contacts/{id}/links:
+    get:
+      tags: [Contacts]
+      security: [{ bearerAuth: [] }]
+      summary: List contacts linked bidirectionally to a Contact
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Linked contacts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  message: { type: string }
+                  data:
+                    type: object
+                    properties:
+                      linked_contacts:
+                        type: array
+                        items: { $ref: '#/components/schemas/LinkedContact' }
+    post:
+      tags: [Contacts]
+      security: [{ bearerAuth: [] }]
+      summary: Link two independent Contacts bidirectionally
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ContactLinkRequest' }
+      responses:
+        '201':
+          description: Contacts linked
+
+  /contacts/{id}/links/{linkedContactId}:
+    delete:
+      tags: [Contacts]
+      security: [{ bearerAuth: [] }]
+      summary: Remove a bidirectional Contact link
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+        - in: path
+          name: linkedContactId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Contacts unlinked
+
+  /providers:
+    get:
+      tags: [Providers]
+      security: [{ bearerAuth: [] }]
+      summary: List Provider Profiles
+      responses:
+        '200':
+          description: Provider Profiles
+
+  /providers/{id}:
+    get:
+      tags: [Providers]
+      security: [{ bearerAuth: [] }]
+      summary: Get Provider Profile
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Provider Profile
+
+  /providers/{id}/link:
+    post:
+      tags: [Providers]
+      security: [{ bearerAuth: [] }]
+      summary: Link a Provider Profile to a Contact without moving history
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProviderLinkRequest' }
+      responses:
+        '200':
+          description: Provider linked
+
+  /providers/{id}/unlink:
+    post:
+      tags: [Providers]
+      security: [{ bearerAuth: [] }]
+      summary: Move a Provider Profile to a new standalone Contact
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProviderUnlinkRequest' }
+      responses:
+        '200':
+          description: Provider unlinked
+
+  /providers/{id}/source-of-truth:
+    patch:
+      tags: [Providers]
+      security: [{ bearerAuth: [] }]
+      summary: Select a linked WhatsApp profile as source of truth
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Source of truth updated
 
   /segments:
     get:

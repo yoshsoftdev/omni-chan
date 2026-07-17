@@ -1,0 +1,32 @@
+{
+    "time": "2026-07-07T09:07:27.208920843Z",
+    "level": "INFO",
+    "msg": "meta webhook incoming post",
+    "body": "{\"object\":\"whatsapp_business_account\",\"entry\":[{\"id\":\"102272935850838\",\"changes\":[{\"value\":{\"messaging_product\":\"whatsapp\",\"metadata\":{\"display_phone_number\":\"6282113389840\",\"phone_number_id\":\"106996032038671\"},\"contacts\":[{\"profile\":{\"name\":\"YoShandy\"},\"wa_id\":\"6282288812003\",\"user_id\":\"ID.37030824809838146\"}],\"messages\":[{\"from\":\"6282288812003\",\"from_user_id\":\"ID.37030824809838146\",\"id\":\"wamid.HBgNNjI4MjI4ODgxMjAwMxUCABIYFDNCMkJGRjRFNTA3RDNBOTJBQUZFAA==\",\"timestamp\":\"1783415245\",\"text\":{\"body\":\"debug true\"},\"type\":\"text\"}]},\"field\":\"messages\"}]}]}"
+}
+{
+    "time": "2026-07-07T09:07:27.210494407Z",
+    "level": "INFO",
+    "msg": "event_published",
+    "event": "webhook_event_published",
+    "event_id": "2edb8e99-327e-4769-8417-1586940803f3",
+    "event_type": "message.received",
+    "phone_number_id": "106996032038671"
+}
+
+
+{
+    "time": "2026-07-07T09:07:49.250115722Z",
+    "level": "INFO",
+    "msg": "meta webhook incoming post",
+    "body": "{\"object\":\"whatsapp_business_account\",\"entry\":[{\"id\":\"102272935850838\",\"changes\":[{\"value\":{\"messaging_product\":\"whatsapp\",\"metadata\":{\"display_phone_number\":\"6282113389840\",\"phone_number_id\":\"106996032038671\"},\"contacts\":[{\"profile\":{\"name\":\"YoShandy\"},\"wa_id\":\"6282288812003\",\"user_id\":\"ID.37030824809838146\"}],\"messages\":[{\"context\":{\"from\":\"6282288812003\",\"from_user_id\":\"ID.37030824809838146\",\"id\":\"wamid.HBgUSUQuMzcwMzA4MjQ4MDk4MzgxNDYVFAASGBQzQjJCRkY0RTUwN0QzQTkyQUFGRQA=\"},\"from\":\"6282288812003\",\"from_user_id\":\"ID.37030824809838146\",\"id\":\"wamid.HBgNNjI4MjI4ODgxMjAwMxUCABIYFDNCMkJDOThDMUUwNjI4MEUzREIzAA==\",\"timestamp\":\"1783415267\",\"text\":{\"body\":\"reply debug true\"},\"type\":\"text\"}]},\"field\":\"messages\"}]}]}"
+}
+{
+    "time": "2026-07-07T09:07:49.252043966Z",
+    "level": "INFO",
+    "msg": "event_published",
+    "event": "webhook_event_published",
+    "event_id": "8bcf3399-53bc-42a7-998c-69c7985215e1",
+    "event_type": "message.received",
+    "phone_number_id": "106996032038671"
+}
