@@ -1,0 +1,101 @@
+---
+description: Omni Chan monochrome SaaS UI + official color selection (WCAG AA)
+alwaysApply: true
+---
+
+# Omni Chan UI Design Rules
+
+These rules apply to ALL new pages and ALL future UI changes. Never violate them.
+
+## Color selection principles (Aturan Pemilihan Warna)
+
+1. Color is for **meaning / status only**, never decoration.
+2. Backgrounds stay **neutral** (white or gray).
+3. Text-to-background contrast ≥ **4.5:1** (WCAG AA). Large/bold text (≥18pt or bold ≥14pt) ≥ **3:1**.
+4. Do not use low-saturation colors for text or critical controls.
+5. Do not put lightness of text and background too close together.
+
+### Official palette (hex)
+
+| Token | Hex | Usage |
+|-------|-----|--------|
+| Primary | `#111111` | Primary text, primary buttons |
+| Surface | `#FFFFFF` | Cards, inputs |
+| Border | `#E5E7EB` | Outlines |
+| Muted | `#6B7280` | Secondary text, disabled text |
+| Background | `#F6F7F9` | Page background |
+| Success | `#16A34A` | Positive status |
+| Warning | `#F59E0B` | Needs attention |
+| Error | `#DC2626` | Failure / critical |
+| Info | `#2563EB` | Informational callouts only |
+
+Do NOT invent new brand/chrome colors (no purple, brown, decorative gradients).
+
+### Contrast patterns (Do / Avoid)
+
+**Alerts**
+
+- Do: very light tinted background + **dark** status-colored text
+- Avoid: dark/muddy background + light text
+
+**Status badges**
+
+- Do: very light tinted background + **dark** status-colored text/icon
+- Avoid: white text on medium/solid green (or other solid fills)
+
+**Inputs**
+
+- Do: white surface + `#E5E7EB` border
+- Avoid: dark input backgrounds
+
+**Disabled**
+
+- Light gray surface + muted `#6B7280` text
+
+## Layout chrome
+
+- Page background: `#F6F7F9`
+- Cards: `#FFFFFF`, border `#E5E7EB`
+- Never color entire cards or sections unless the element **is** an Alert
+
+## Status
+
+Represent status ONLY with Badge, Icon, or Text — never by painting the whole card.
+
+## Alerts
+
+Use shared `Alert` only:
+
+- warning / error / success / info
+- Card stays white; alert inside may use light tinted backgrounds
+
+Example payment missing:
+
+> ⚠ Setup Incomplete — Metode pembayaran belum dikonfigurasi.
+
+## Buttons
+
+- Primary: `#111111` bg, white text
+- Secondary: white, `#E5E7EB` border
+- Danger: Error red
+- Success: Success green
+
+## Badges
+
+- Connected / success: light green + dark green text
+- Disconnected: gray
+- Needs Attention: light amber + dark amber text
+- Error: light red + dark red text
+
+Never use blue or purple for **status** badges (blue is Info callouts only).
+
+## Sections / hierarchy
+
+Separate with cards, spacing, headings, dividers. Emphasize with typography and spacing, not colored containers.
+
+## Theme
+
+- **Light mode is the primary / default** theme for Omni Chan.
+- Dark mode is optional and must be toggled by the user (Settings → Appearance).
+- Do not default to `system` if that would force dark on first visit; default is `light`.
+- Color contrast rules (WCAG AA) apply in **both** light and dark — they are not a request to make the app dark by default.
