@@ -806,6 +806,24 @@ paths:
       tags: [Templates]
       security: [{ bearerAuth: [] }]
       summary: List templates
+      parameters:
+        - in: query
+          name: channel_id
+          schema: { type: string, format: uuid }
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: status
+          schema: { type: string, enum: [APPROVED, PENDING, REJECTED] }
+        - in: query
+          name: language
+          schema: { type: string, description: "Locale or short code (en, en_US, id)" }
+        - in: query
+          name: category
+          schema: { type: string, enum: [MARKETING, UTILITY, AUTHENTICATION] }
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/PageSizeParam'
       responses:
         '200':
           description: OK

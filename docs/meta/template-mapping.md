@@ -22,11 +22,23 @@ template.Repository.UpsertFromSync
 
 ## Language Normalization
 
-| Meta input | Stored |
-|------------|--------|
-| `en` | `en_EN` |
-| `en_US` | `en_US` |
-| `id` | `id_ID` |
+Handled exclusively by `template.LanguageResolver` (Phase 5).
+
+Meta treats `en` and `en_US` as **distinct** `language.code` values. Coercing `en` → `en_US`
+on send causes Meta `#132001` (template does not exist in the translation).
+
+| Meta / input | Stored | Meta send (`language.code`) |
+|--------------|--------|------------------------------|
+| `en` | `en` | `en` |
+| `en_US` | `en_US` | `en_US` |
+| `en_EN` (legacy artifact) | `en_US` | `en_US` |
+| `id` | `id` | `id` |
+| `id_ID` | `id` | `id` |
+| other `xx_YY` | case-normalized | same |
+| other bare `xx` | lowercase `xx` (no invented region) | same |
+
+Never invent invalid regions such as `en` → `en_EN`. Never coerce `en` ↔ `en_US` on send.
+UI language filters may treat `en` / `en_US` as the English family for search only.
 
 ## Component Support
 

@@ -29,7 +29,9 @@ Phase 2 — Broadcast (Meta template campaigns)
 
 Deferred
 
-[ ] Automation
+[x] Automation — Frontend Phase 1 (mock data layer; UI for endpoints, keys, wizard, detail)
+[x] Automation — Backend APIs + Meta invoke path (migration 000046, CRUD, keys, analytics, invoke)
+[x] Automation — Inbound forward webhooks (message.received → customer URL + dashboard UI)
 [ ] Webhook delivery/read status sync for campaigns
 
 Phase 3
