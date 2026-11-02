@@ -4,15 +4,15 @@ Omnichannel SaaS platform (monorepo parent + git submodules).
 
 ## Clone (repo dalam repo)
 
-Parent repo berisi submodule: `backend`, `frontend`, `webhook-service`.
+Parent repo berisi submodule: `backend`, `frontend`, `webhook-service`, `storage-service`.
 
 ```bash
 # Opsi 1 — script
-./scripts/git-clone.sh git@git.int.visibel.id:omni-chan/omni-chan-v2.git
+./scripts/git-clone.sh https://github.com/yoshsoftdev/omni-chan.git
 
 # Opsi 2 — manual
-git clone --recurse-submodules git@git.int.visibel.id:omni-chan/omni-chan-v2.git
-cd omni-chan-v2
+git clone --recurse-submodules https://github.com/yoshsoftdev/omni-chan.git
+cd omni-chan
 ```
 
 Jika sudah clone tanpa submodule:
@@ -57,12 +57,24 @@ pnpm install
 pnpm exec next dev -p 8095
 ```
 
+## Storage service
+
+```bash
+cd services/storage-service
+cp .env.example .env
+make migrate-up
+make run
+```
+
+Default port: `8082`
+
 ## Structure
 
 ```
 services/
   backend-service/   — REST API + WebSocket (submodule)
-  webhook-service/     — Meta/Telegram ingress (submodule)
+  webhook-service/   — Meta/Telegram ingress (submodule)
+  storage-service/   — Media/File storage service (submodule)
 shared/                — shared Go packages (parent repo)
 frontend/              — Next.js (submodule)
 docs/                  — PRD, tasks, architecture

@@ -1,21 +1,22 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Daftarkan repo yang sudah ada (backend, frontend, webhook) sebagai submodule parent.
+# Daftarkan repo yang sudah ada (backend, frontend, webhook, storage) sebagai submodule parent.
 #
 # Usage:
 #   ./scripts/git-setup-submodules.sh
-#   PARENT_REPO_URL=git@git.int.visibel.id:omni-chan/omni-chan-v2.git ./scripts/git-setup-submodules.sh
+#   PARENT_REPO_URL=https://github.com/yoshsoftdev/omni-chan.git ./scripts/git-setup-submodules.sh
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${ROOT_DIR}"
 
-PARENT_REPO_URL="${PARENT_REPO_URL:-git@git.int.visibel.id:omni-chan/omni-chan-v2.git}"
+PARENT_REPO_URL="${PARENT_REPO_URL:-https://github.com/yoshsoftdev/omni-chan.git}"
 
 declare -A SUBMODULES=(
-  ["services/backend-service"]="git@git.int.visibel.id:omni-chan/omni-backend.git|main"
-  ["frontend"]="git@git.int.visibel.id:omni-chan/omni-frontend.git|main"
-  ["services/webhook-service"]="git@git.int.visibel.id:omni-chan/omni-webhook.git|master"
+  ["services/backend-service"]="https://github.com/yoshsoftdev/omni-baack.git|main"
+  ["frontend"]="https://github.com/yoshsoftdev/omni-front.git|main"
+  ["services/webhook-service"]="https://github.com/yoshsoftdev/omni-hook.git|master"
+  ["services/storage-service"]="https://github.com/yoshsoftdev/omni-stor.git|main"
 )
 
 if [[ ! -f "${ROOT_DIR}/.gitmodules" ]]; then
@@ -66,7 +67,7 @@ register_submodule() {
   git submodule add -b "${branch}" "${url}" "${path}"
 }
 
-for path in services/backend-service frontend services/webhook-service; do
+for path in services/backend-service frontend services/webhook-service services/storage-service; do
   IFS='|' read -r url branch <<< "${SUBMODULES[$path]}"
   register_submodule "${path}" "${url}" "${branch}"
 done
@@ -82,7 +83,7 @@ echo ""
 echo "Parent repo siap."
 echo ""
 echo "Langkah berikutnya:"
-echo "  git add .gitmodules .gitignore scripts/ shared/ docs/ deploy/ docker-compose.yml go.work Makefile README.md services/backend-service frontend services/webhook-service"
+echo "  git add .gitmodules .gitignore scripts/ shared/ docs/ deploy/ docker-compose.yml go.work Makefile README.md services/backend-service frontend services/webhook-service services/storage-service"
 echo "  git status"
 echo "  git commit -m \"chore: parent repo with git submodules\""
 echo "  git push -u origin main"

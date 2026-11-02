@@ -1,14 +1,18 @@
 [submodule "services/backend-service"]
 	path = services/backend-service
-	url = git@git.int.visibel.id:omni-chan/omni-backend.git
+	url = https://github.com/yoshsoftdev/omni-baack.git
 	branch = main
 
 [submodule "frontend"]
 	path = frontend
-	url = git@git.int.visibel.id:omni-chan/omni-frontend.git
+	url = https://github.com/yoshsoftdev/omni-front.git
 	branch = main
 
 [submodule "services/webhook-service"]
 	path = services/webhook-service
-	url = git@git.int.visibel.id:omni-chan/omni-webhook.git
+	url = https://github.com/yoshsoftdev/omni-hook.git
 	branch = master
+[submodule "services/storage-service"]
+	path = services/storage-service
+	url = https://github.com/yoshsoftdev/omni-stor.git
+	branch = main

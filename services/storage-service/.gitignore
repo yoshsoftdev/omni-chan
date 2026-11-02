@@ -1,3 +1,0 @@
-# Local upload data directory (not the internal/storage Go package)
-/storage/
-.env
