@@ -88,7 +88,12 @@ make test-race       # semua modul Go dengan race detector
 make test-frontend   # vitest + typecheck
 make test-e2e        # Playwright (backend di-mock); sekali saja: cd frontend && pnpm test:e2e:install
 make test-all        # ketiganya
+(cd frontend && pnpm test:coverage)   # vitest + gate coverage
+# Integration test Postgres (database kosong, sudah dimigrasi):
+(cd services/backend-service && DATABASE_URL=postgres://... APP_ENV=development go test -tags=integration ./...)
 ```
+
+CI: `.github/workflows/ci.yml` di repo ini dan di tiap submodule (butuh secret `SUBMODULES_TOKEN` / `PARENT_REPO_TOKEN` bila repo private).
 
 ## Structure
 

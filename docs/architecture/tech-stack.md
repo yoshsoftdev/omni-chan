@@ -61,11 +61,11 @@
 ### Kualitas & operasional
 | Area | Kondisi |
 |---|---|
-| Unit test Go | 141 file `_test.go`, ±426 fungsi `Test*` (paling banyak di backend) |
-| Unit test FE | 30 file test dari ±458 file sumber (sebagian besar mapper/utils) |
-| Integration / e2e test | JetStream embedded (`shared/nats`), Playwright smoke auth (4 test) |
-| CI | **Tidak ada** pipeline (tidak ada `.github/workflows`) |
-| Coverage report | Tidak ada |
+| Unit test Go | ±150 file `_test.go`; coverage shared 57 %, backend 24 %, webhook 41 %, storage 27 % (jadi batas minimum CI) |
+| Unit test FE | 30 file, 118 test; coverage lines 49 % (batas minimum 48 %) |
+| Integration / e2e test | Postgres (`-tags=integration`), JetStream embedded, ingress webhook end-to-end; Playwright 9 test untuk 5 alur utama |
+| CI | GitHub Actions di 5 repo (vet, golangci-lint only-new, race test, coverage gate, integration Postgres, lint, tsc, build, e2e) |
+| Coverage report | Gate di CI (Go `cover`, vitest `thresholds`) |
 | Monitoring / alert | Tidak ada (tidak ada Prometheus, tracing, atau error tracking) |
 
 ## 3. Penilaian
@@ -83,9 +83,9 @@
 
 | # | Perubahan | Dari → Ke | Fase roadmap |
 |---|---|---|---|
-| S1 | CI pipeline | tidak ada → GitHub Actions (`go test ./...`, `go vet`, `golangci-lint`, `vitest`, `next lint`, `tsc`) | 3 |
-| S2 | Integration test | tidak ada → `testcontainers-go` (Postgres, Redis, NATS/Kafka) | 3 |
-| S3 | E2E test | Playwright terpasang + smoke auth → perluas ke 5 alur utama | 3 |
+| S1 ✅ | CI pipeline | tidak ada → GitHub Actions (`go test ./...`, `go vet`, `golangci-lint`, `vitest`, `next lint`, `tsc`) | 3 |
+| S2 ✅ | Integration test | Postgres via service container CI + nats-server embedded (tanpa testcontainers) | 3 |
+| S3 ✅ | E2E test | Playwright untuk 5 alur utama | 3 |
 | S4 | Observability | metrik JSON custom → OpenTelemetry SDK + Prometheus + Grafana + Loki/Tempo, Sentry untuk FE/BE | 4 |
 | S5 | Type-safe SQL | SQL tulis tangan → `sqlc` (bertahap per modul) | 6 |
 | S6 | Kontrak API FE | DTO + `assertDomain*` tulis tangan → generate dari `docs/openapi/v1.yaml` (`openapi-typescript` + `openapi-fetch`) | 6 |

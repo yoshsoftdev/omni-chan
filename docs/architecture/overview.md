@@ -1,34 +1,33 @@
-Frontend
+# Arsitektur — Ringkasan
 
-Next.js
-↓
-REST API (internal)
-↓
-Backend Service
+Detail alur data dan risikonya ada di [data-flow.md](data-flow.md); versi dan pilihan teknologi di [tech-stack.md](tech-stack.md).
+Port tiap service **berbeda per environment**: lihat tabel "Port per environment" di [README root](../../README.md).
 
-Webhook Service (public)
+## Service
 
-Meta / Telegram
-↓
-Webhook Service
-↓
-NATS JetStream
-↓
-Backend Service (consumer)
-↓
-Service Layer
-↓
-Repository Layer
+| Service | Terbuka ke internet | Tugas |
+|---|---|---|
+| frontend (Next.js) | ya, lewat nginx | Dashboard; mem-proxy `/api/*` dan `/ws` ke backend |
+| webhook-service | **ya, satu-satunya service publik** | Terima webhook Meta/Instagram, invoke automation publik, proxy media untuk Meta |
+| backend-service `cmd/api` | tidak | REST API v1, WebSocket, consumer event, job terjadwal |
+| backend-service `cmd/broadcast-orchestrator` / `cmd/broadcast-worker` | tidak | Penjadwalan dan pengiriman kampanye |
+| storage-service | tidak | Upload dan penyimpanan file |
 
-Infrastructure
+Infrastruktur: PostgreSQL 16, Redis 7 (pub/sub WebSocket, rate limit, idempotensi), NATS JetStream 2.10 (event webhook & broadcast), disk lokal atau MinIO.
 
-PostgreSQL
-Redis
-NATS JetStream
-MinIO
+## Alur utama
 
-Instagram outbound media:
+```
+Meta ──webhook──▶ webhook-service ──publish──▶ NATS ──▶ backend consumer ──▶ Postgres ──▶ Redis pub/sub ──▶ WebSocket ──▶ browser
+browser ──/api/v1──▶ backend ──▶ Meta Graph API
+orchestrator ──outbox──▶ NATS ──▶ broadcast-worker ──▶ Meta
+```
 
+Jika NATS mati, webhook-service membalas **503** ke Meta agar Meta mengirim ulang; payload rusak tetap dibalas 200 dan masuk DLQ.
+
+## Media Instagram
+
+```
 Backend Service (private)
 ↓ mint short-lived media token
 Meta receives `https://<public-webhook>/media/{token}`
@@ -42,6 +41,7 @@ Storage Service (private)
 Webhook Service
 ↓ streamed response
 Meta
+```
 
 Media download does not use NATS because Meta requires an immediate HTTP
 response. Only Webhook Service is internet-facing; Backend and Storage remain
@@ -57,14 +57,4 @@ media URL (or the MIME/type did not match). Verify:
 4. Outbound images are JPEG/PNG (not WebP); videos are MP4/MOV/WebM/OGG/AVI up to 25MB
 5. `ValidateAttachment` for Instagram uses IG limits (not WhatsApp 16MB video cap)
 
-Realtime
-
-Browser
-↓
-WebSocket
-↓
-Hub
-↓
-Redis PubSub
-
-See `docs/archive/phases/migration-webhook-service.md` for webhook split details.
+Penjelasan pemisahan webhook-service: [archive/phases/migration-webhook-service.md](../archive/phases/migration-webhook-service.md).

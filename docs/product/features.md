@@ -112,5 +112,5 @@ Cara update: ubah status di tabel ini dalam PR yang sama dengan perubahan kodeny
 ---
 
 ## Utang teknis di frontend yang terkait fitur
-- `features/broadcast/_legacy/*`, `*.mock.ts`, `mock-data.ts` masih ada di codebase. Hapus setelah fitur terkait berstatus ✅.
+- ✅ `_legacy/` dan file mock yang tidak terpakai sudah dihapus (TODO 2.5). Masih dipakai: `broadcast/mock/template-legacy-adapters.ts` (oleh `utils/template-consumer.ts`) dan `broadcast/mock/template-mock-data.ts` (oleh wizard automation) — ganti dengan data API sebelum dihapus.
 - Route redirect lama: `broadcast/campaign`, `broadcast/schedule`, `integrations`.

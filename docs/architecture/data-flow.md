@@ -163,6 +163,9 @@ Pola **transactional outbox** sudah dipakai di jalur ini. Pertahankan pola ini s
 | D10 | Dua jalur consumer paralel (`events.>` legacy + `meta.>`) | `cmd/api/main.go` | Kompleksitas, potensi proses dobel | 6 |
 | D11 ✅ | `/api/v1/metrics` terbuka di service publik (diperbaiki: wajib token internal) | `webhook-service/cmd/main.go` | Kebocoran info operasional | 0 |
 | D13 ✅ | Webhook di-ACK 200 + kunci idempotensi tetap tertanda walau publish gagal → pesan hilang (diperbaiki: lepas kunci + 503) | `webhook-service/internal/processor` | Tinggi | 0 |
+| D14 ✅ | Error DB saat resolve tenant dianggap terminal → event masuk DLQ tanpa retry | `eventconsumer/resolver` | Tinggi | 3 |
+| D15 ✅ | Throttling Meta (HTTP 400 + 130429) dianggap gagal permanen | `pkg/meta/errors.go` | Tinggi | 3 |
+| D16 ✅ | Race klaim pertama cache media di Postgres → kirim media gagal | `media/cache_repository.go` | Sedang | 3 |
 | D12 | Tidak ada trace id lintas hop | semua service | Debugging alur async sulit | 4 |
 
 ## 7. Target alur (setelah roadmap)

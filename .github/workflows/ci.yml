@@ -1,0 +1,120 @@
+# Monorepo CI: every Go module, Postgres integration tests, and the frontend.
+# Submodules are private repos: set secret SUBMODULES_TOKEN (read access to them).
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  go:
+    name: go (${{ matrix.module }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # min-coverage = baseline floor measured 2026-11-13; raise it, never lower it.
+          - module: shared
+            min-coverage: 57
+          - module: services/backend-service
+            min-coverage: 23
+          - module: services/webhook-service
+            min-coverage: 40
+          - module: services/storage-service
+            min-coverage: 26
+    defaults:
+      run:
+        working-directory: ${{ matrix.module }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+          token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
+      - uses: actions/setup-go@v7
+        with:
+          go-version: "1.26.11"
+          cache-dependency-path: "**/go.sum"
+      - run: go vet ./...
+      - run: go test -race -count=1 -coverprofile=cover.out ./...
+      - name: coverage gate
+        run: go tool cover -func=cover.out | awk -v min=${{ matrix.min-coverage }} '/^total:/ { gsub("%", "", $3); print "coverage " $3 "% (min " min "%)"; if ($3 + 0 < min) exit 1 }'
+      - uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.15.0
+          working-directory: ${{ matrix.module }}
+          # Existing code has known findings; fail only on issues a PR introduces.
+          only-new-issues: true
+
+  integration:
+    name: integration (postgres)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: omni_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 2s --health-timeout 5s --health-retries 20
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/omni_test?sslmode=disable
+      APP_ENV: development
+    defaults:
+      run:
+        working-directory: services/backend-service
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+          token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
+      - uses: actions/setup-go@v7
+        with:
+          go-version: "1.26.11"
+          cache-dependency-path: "**/go.sum"
+      - run: go run ./cmd/migrate -direction=up
+      - run: go test -race -count=1 -tags=integration ./...
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+          token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test:coverage
+      - run: pnpm build
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            frontend/playwright-report
+            frontend/test-results
+          retention-days: 7

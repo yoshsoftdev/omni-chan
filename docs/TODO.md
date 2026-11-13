@@ -9,7 +9,7 @@ Pelacak progres tunggal. Detail, alasan, dan Definition of Done setiap butir ada
 3. Tulis bukti di kolom akhir: hash commit, file, atau PR.
 4. Bila butir di sini berubah, ubah juga di `improvement-plan.md` dalam PR yang sama.
 
-_Terakhir diperbarui: 2026-11-13_
+_Terakhir diperbarui: 2026-11-14_
 
 ## Ringkasan
 
@@ -17,16 +17,16 @@ _Terakhir diperbarui: 2026-11-13_
 |---|---|---|
 | T | Tooling & baseline | 3 / 3 ✅ |
 | 0 | Stabilisasi darurat | 6 / 7 |
-| 1 | Dokumen | 4 / 7 |
-| 2 | Daftar fitur & triase | 1 / 5 |
-| 3 | Testing & CI | 0 / 6 |
+| 1 | Dokumen | 6 / 7 |
+| 2 | Daftar fitur & triase | 2 / 5 |
+| 3 | Testing & CI | 6 / 6 ✅ |
 | 4 | Monitoring | 0 / 7 |
 | 5 | Design system | 0 / 6 |
 | 6 | Integritas data & pemecahan proses | 0 / 6 |
 | 7 | UI/UX revamp | 0 / 7 |
 | 8 | Migrasi NATS → Kafka | 0 / 7 |
 | 9 | Fitur R3 | 0 / 5 |
-| **Total** | | **14 / 66** |
+| **Total** | | **23 / 66** |
 
 ## Perlu tindakan manual (pemilik repo)
 
@@ -34,6 +34,8 @@ _Terakhir diperbarui: 2026-11-13_
 - [ ] Push branch: submodule dulu (`frontend@yos`, `backend-service@yos`, `webhook-service@stag`, `storage-service@chore/phase0-hardening`), lalu induk `chore/phase0-hardening`
 - [ ] Server deploy (`deploy/`): pastikan Go ≥ 1.26 atau `GOTOOLCHAIN=auto` dengan akses internet
 - [ ] Review PRD oleh product owner (= butir 1.5)
+- [ ] GitHub: buat secret `SUBMODULES_TOKEN` (repo induk) dan `PARENT_REPO_TOKEN` (repo backend/webhook/storage) bila repo private; read-only cukup
+- [ ] GitHub: aktifkan branch protection "require status checks" (`ci`) di kelima repo — DoD fase 3
 
 ---
 
@@ -60,8 +62,8 @@ _Terakhir diperbarui: 2026-11-13_
 - [x] **1.3** PRD v2 — `product/prd.md`
 - [x] **1.4** Tech stack & alur data — `architecture/tech-stack.md`, `architecture/data-flow.md`
 - [ ] **1.5** Review PRD oleh product owner (pertanyaan terbuka + tanda [KONFIRMASI])
-- [ ] **1.6** Tulis ulang `architecture/overview.md` dengan port yang benar
-- [ ] **1.7** Template PR: wajib update `features.md` dan `TODO.md`
+- [x] **1.6** Tulis ulang `architecture/overview.md` (tabel service, alur utama, port → tabel README) — `architecture/overview.md`
+- [x] **1.7** Template PR di 5 repo (test hijau, kontrak API, `features.md`, `TODO.md`, tanpa secret) — `.github/pull_request_template.md`
 
 ## Fase 2 — Daftar fitur & triase
 
@@ -69,16 +71,16 @@ _Terakhir diperbarui: 2026-11-13_
 - [ ] **2.2** Validasi status + prioritas MoSCoW bersama PO
 - [ ] **2.3** Putuskan nasib halaman 🧪 (billing, workflows, integrations, edit jadwal, test invoke)
 - [ ] **2.4** Bug list → issue tracker dengan langkah reproduksi
-- [ ] **2.5** Hapus `_legacy/` dan `*.mock.ts` untuk fitur yang sudah ✅
+- [x] **2.5** Hapus 24 file `_legacy/`/mock yang tidak di-import (−3.823 baris); 2 file mock yang masih dipakai dipertahankan — `frontend`
 
 ## Fase 3 — Testing & CI
 
-- [ ] **3.1** GitHub Actions per repo (vet, golangci-lint, `go test -race`, lint, tsc, vitest)
-- [ ] **3.2** Coverage report + baseline (PR tidak boleh menurunkan)
-- [ ] **3.3** Unit test domain prioritas (normalizer, resolver tenant, AssignmentEngine, template validation, failure classifier, RBAC)
-- [ ] **3.4** Integration test testcontainers (webhook → bus → consumer → DB; outbox → worker; idempotensi)
-- [ ] **3.5** Test komponen inbox + mapper DTO
-- [ ] **3.6** E2E 5 alur utama (login ✅ sebagian lewat T1, channel, balas inbox, kampanye, automation)
+- [x] **3.1** GitHub Actions di 5 repo: vet, golangci-lint 2.15 (only-new), `go test -race`, lint, tsc, vitest, build, Playwright; diverifikasi actionlint — `.github/workflows/ci.yml`
+- [x] **3.2** Gate coverage = baseline: Go shared 57 / backend 23 / webhook 40 / storage 26 %, FE lines 48 % (vitest thresholds)
+- [x] **3.3** Domain prioritas tercakup; test baru resolver tenant + klasifikasi rate limit Meta (2 bug diperbaiki)
+- [x] **3.4** Integration: Postgres asli (`-tags=integration`, job CI `integration`) untuk klaim recontact & media; ingress webhook → JetStream → subscriber backend + idempotensi (1 bug race diperbaiki)
+- [x] **3.5** Mapper DTO tercakup (+ test pemetaan kanal percakapan); perilaku komponen inbox lewat e2e 3.6
+- [x] **3.6** E2E 5 alur: login, hubungkan channel manual, balas di inbox, buat & kirim kampanye, buat endpoint automation (+ regresi template palsu) — `frontend/e2e/*.e2e.ts`, 9 test
 
 ## Fase 4 — Monitoring & observability
 

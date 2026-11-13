@@ -66,8 +66,8 @@ Ukuran: **S** ≤ 2 hari, **M** ≤ 1 minggu, **L** > 1 minggu.
 - [x] 1.3 PRD v2 ([product/prd.md](../product/prd.md))
 - [x] 1.4 Tech stack & alur data
 - [ ] 1.5 Review PRD oleh product owner: jawab "Pertanyaan terbuka" dan semua tanda **[KONFIRMASI]**
-- [ ] 1.6 Tulis ulang [`architecture/overview.md`](../architecture/overview.md) dengan port yang benar setelah 0.5
-- [ ] 1.7 Aturan: setiap PR fitur wajib meng-update `features.md`. Masukkan ke template PR.
+- [x] 1.6 Tulis ulang [`architecture/overview.md`](../architecture/overview.md) dengan port yang benar setelah 0.5
+- [x] 1.7 Aturan: setiap PR fitur wajib meng-update `features.md` dan `TODO.md` — template PR di 5 repo.
 
 ## Fase 2 — Daftar fitur & triase backlog (S) · *daftar sudah dibuat*
 
@@ -75,17 +75,22 @@ Ukuran: **S** ≤ 2 hari, **M** ≤ 1 minggu, **L** > 1 minggu.
 - [ ] 2.2 Validasi status bersama PO dan tetapkan prioritas (MoSCoW) per fitur
 - [ ] 2.3 Putuskan nasib halaman 🧪: `billing`, `automation/workflows`, `integrations`, edit jadwal, test invoke. Pilihan: sembunyikan di balik feature flag atau hapus.
 - [ ] 2.4 Ubah tiap butir di [bugs/campaign-broadcast-bugs.md](../bugs/campaign-broadcast-bugs.md) menjadi issue tracker dengan langkah reproduksi
-- [ ] 2.5 Hapus kode `_legacy/` dan `*.mock.ts` yang fiturnya sudah ✅
+- [x] 2.5 Hapus kode `_legacy/` dan `*.mock.ts` yang tidak lagi di-import (24 file). Sisa: `broadcast/mock/template-legacy-adapters.ts` dan `template-mock-data.ts` masih dipakai `template-consumer.ts` & wizard automation
 
 ## Fase 3 — Testing & CI (M)
 
-- [ ] 3.1 GitHub Actions per repo/submodule: `go vet`, `golangci-lint`, `go test -race ./...`, `pnpm lint`, `tsc --noEmit`, `vitest`
-- [ ] 3.2 Laporan coverage (Go `-coverprofile`, Vitest `--coverage`) + baseline. Aturan: PR tidak boleh menurunkan coverage.
-- [ ] 3.3 Unit test domain prioritas: normalizer webhook, resolver tenant, AssignmentEngine, template variable validation, failure classifier broadcast, RBAC permission
-- [ ] 3.4 Integration test dengan `testcontainers-go`: webhook → bus → consumer → DB (alur §2), outbox → worker (alur §4), idempotensi (event dikirim 2x)
-- [ ] 3.5 Test FE: komponen inbox (React Testing Library) dan mapper DTO
-- [ ] 3.6 E2E Playwright untuk 5 alur: login, hubungkan channel (mock Meta), balas pesan di inbox, buat & kirim kampanye, buat endpoint automation
-- DoD fase: CI wajib hijau sebelum merge (branch protection aktif).
+- [x] 3.1 GitHub Actions per repo/submodule: `go vet`, `golangci-lint`, `go test -race ./...`, `pnpm lint`, `tsc --noEmit`, `vitest`
+- [x] 3.2 Laporan coverage (Go `-coverprofile`, Vitest `--coverage`) + baseline. Aturan: PR tidak boleh menurunkan coverage.
+- [x] 3.3 Unit test domain prioritas: normalizer webhook, resolver tenant, AssignmentEngine, template variable validation, failure classifier broadcast, RBAC permission
+- [x] 3.4 Integration test (Postgres via env `DATABASE_URL` + service container CI, bukan testcontainers — tanpa dependensi baru): webhook → bus → consumer → DB (alur §2), outbox → worker (alur §4), idempotensi (event dikirim 2x)
+- [x] 3.5 Test FE: komponen inbox (React Testing Library) dan mapper DTO
+- [x] 3.6 E2E Playwright untuk 5 alur: login, hubungkan channel (mock Meta), balas pesan di inbox, buat & kirim kampanye, buat endpoint automation
+- DoD fase: CI wajib hijau sebelum merge (branch protection aktif — **tindakan manual** di GitHub, lihat TODO).
+- Bug yang ditemukan & diperbaiki selama fase 3:
+  - Resolver tenant mengubah error DB sementara menjadi DLQ terminal → event hilang saat Postgres gangguan. Kini hanya "channel tidak ada" yang terminal.
+  - Error throughput Meta 130429/131056 (HTTP 400) dicap gagal permanen → penerima kampanye gagal padahal hanya di-throttle. `IsRateLimited` kini membaca kode error Meta.
+  - `ClaimRefresh` media: klaim pertama yang bersamaan gagal `unique violation` di Postgres (tidak terlihat di mock) → kirim header gambar gagal. Kini `ON CONFLICT` + kunci ulang.
+  - Wizard automation menampilkan template **mock** bila API kosong/error → endpoint terikat template palsu. Fallback dihapus.
 
 ## Fase 4 — Monitoring & observability (M)
 
