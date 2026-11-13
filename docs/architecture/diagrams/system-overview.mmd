@@ -1,0 +1,77 @@
+graph TB
+
+    %% ========================
+    %% Client
+    %% ========================
+    subgraph Client
+        FE["Frontend<br/>:8095"]
+    end
+
+    %% ========================
+    %% Core Services
+    %% ========================
+    subgraph "Omni Chan Services"
+        BE["Backend API<br/>:8066"]
+        WH["Webhook Service<br/>:8060"]
+        ST["Storage Service<br/>:8065"]
+        BO["Broadcast Orchestrator"]
+        BW["Broadcast Worker"]
+    end
+
+    %% ========================
+    %% Infrastructure
+    %% ========================
+    subgraph Infrastructure
+        NATS[(NATS)]
+        REDIS[(Redis)]
+        PG[(PostgreSQL)]
+    end
+
+    %% ========================
+    %% External
+    %% ========================
+    subgraph External
+        META["Meta WhatsApp API"]
+        CLIENT["ERP / n8n / External App"]
+        STORAGE["S3 / MinIO (Optional)"]
+    end
+
+    %% ========================
+    %% Frontend
+    %% ========================
+    FE -->|REST API| BE
+    FE -->|Upload File| ST
+
+    %% ========================
+    %% Webhook
+    %% ========================
+    META -->|Webhook Event| WH
+    CLIENT -->|Automation API| WH
+
+    WH -->|Publish Event| NATS
+
+    %% ========================
+    %% Backend
+    %% ========================
+    BE -->|Read / Write| PG
+    BE -->|Cache| REDIS
+    BE -->|Publish Job| NATS
+
+    %% ========================
+    %% Broadcast
+    %% ========================
+    BO -->|Create Broadcast Job| NATS
+    NATS --> BW
+
+    BW -->|Send Message| META
+
+    %% ========================
+    %% Incoming Event
+    %% ========================
+    NATS --> BE
+
+    %% ========================
+    %% Storage
+    %% ========================
+    ST -->|Metadata| PG
+    ST -->|Upload File| STORAGE

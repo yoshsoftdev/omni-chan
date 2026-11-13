@@ -9,15 +9,15 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
-	sharedevents "github.com/omnichannel/omni-chan-v2/shared/events"
 	sharedconfig "github.com/omnichannel/omni-chan-v2/shared/config"
+	sharedevents "github.com/omnichannel/omni-chan-v2/shared/events"
 )
 
 type Publisher struct {
-	js             nats.JetStreamContext
-	cfg            sharedconfig.NATS
-	log            *slog.Logger
-	internalToken  string
+	js            nats.JetStreamContext
+	cfg           sharedconfig.NATS
+	log           *slog.Logger
+	internalToken string
 }
 
 func NewPublisher(conn *nats.Conn, cfg sharedconfig.NATS, log *slog.Logger) (*Publisher, error) {
@@ -33,21 +33,7 @@ func NewPublisher(conn *nats.Conn, cfg sharedconfig.NATS, log *slog.Logger) (*Pu
 }
 
 func (p *Publisher) ensureStream() error {
-	_, err := p.js.StreamInfo(p.cfg.StreamName)
-	if err == nil {
-		return nil
-	}
-	_, err = p.js.AddStream(&nats.StreamConfig{
-		Name:      p.cfg.StreamName,
-		Subjects:  []string{"events.>"},
-		Retention: nats.LimitsPolicy,
-		Storage:   nats.FileStorage,
-	})
-	if err != nil {
-		return fmt.Errorf("create stream %s: %w", p.cfg.StreamName, err)
-	}
-	p.log.Info("created jetstream", "stream", p.cfg.StreamName)
-	return nil
+	return EnsureStream(p.js, WebhookStreamSpec(p.cfg), p.log)
 }
 
 func (p *Publisher) Publish(ctx context.Context, eventType, source string, payload any, metadata map[string]string) error {
@@ -77,6 +63,8 @@ func (p *Publisher) Publish(ctx context.Context, eventType, source string, paylo
 	if p.internalToken != "" {
 		msg.Header.Set("X-Internal-Token", p.internalToken)
 	}
+	// Server-side dedup: a retry of a publish that actually landed is dropped.
+	msg.Header.Set(nats.MsgIdHdr, envelope.ID)
 
 	var lastErr error
 	retries := p.cfg.MaxPublishRetry

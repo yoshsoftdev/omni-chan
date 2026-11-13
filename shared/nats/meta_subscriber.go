@@ -3,14 +3,15 @@ package nats
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
 	"time"
 
 	"github.com/nats-io/nats.go"
-	sharedevents "github.com/omnichannel/omni-chan-v2/shared/events"
 	sharedconfig "github.com/omnichannel/omni-chan-v2/shared/config"
+	sharedevents "github.com/omnichannel/omni-chan-v2/shared/events"
 )
 
 // CanonicalHandler processes canonical Meta events from JetStream.
@@ -22,7 +23,7 @@ type MetaSubscriber struct {
 	cfg           sharedconfig.NATS
 	log           *slog.Logger
 	internalToken string
-	maxDeliver    int
+	policy        RedeliveryPolicy
 }
 
 func NewMetaSubscriber(conn *nats.Conn, cfg sharedconfig.NATS, log *slog.Logger) (*MetaSubscriber, error) {
@@ -35,7 +36,7 @@ func NewMetaSubscriber(conn *nats.Conn, cfg sharedconfig.NATS, log *slog.Logger)
 		cfg:           cfg,
 		log:           log,
 		internalToken: cfg.InternalToken,
-		maxDeliver:    5,
+		policy:        RedeliveryPolicyFrom(cfg),
 	}
 	if err := s.ensureStream(); err != nil {
 		return nil, err
@@ -44,39 +45,7 @@ func NewMetaSubscriber(conn *nats.Conn, cfg sharedconfig.NATS, log *slog.Logger)
 }
 
 func (s *MetaSubscriber) ensureStream() error {
-	info, err := s.js.StreamInfo(s.cfg.StreamName)
-	if err != nil {
-		_, err = s.js.AddStream(&nats.StreamConfig{
-			Name:      s.cfg.StreamName,
-			Subjects:  []string{"events.>", "meta.>"},
-			Retention: nats.LimitsPolicy,
-			Storage:   nats.FileStorage,
-		})
-		if err != nil {
-			return fmt.Errorf("create stream %s: %w", s.cfg.StreamName, err)
-		}
-		return nil
-	}
-	hasMeta := false
-	for _, subj := range info.Config.Subjects {
-		if subj == "meta.>" || strings.HasPrefix(subj, "meta.") {
-			hasMeta = true
-			break
-		}
-	}
-	if !hasMeta {
-		subjects := append(info.Config.Subjects, "meta.>")
-		_, err = s.js.UpdateStream(&nats.StreamConfig{
-			Name:      info.Config.Name,
-			Subjects:  subjects,
-			Retention: info.Config.Retention,
-			Storage:   info.Config.Storage,
-		})
-		if err != nil {
-			return fmt.Errorf("update stream subjects: %w", err)
-		}
-	}
-	return nil
+	return EnsureStream(s.js, WebhookStreamSpec(s.cfg), s.log)
 }
 
 func (s *MetaSubscriber) Subscribe(ctx context.Context, consumerName string, handler CanonicalHandler) error {
@@ -94,8 +63,9 @@ func (s *MetaSubscriber) Subscribe(ctx context.Context, consumerName string, han
 			default:
 			}
 			msgs, err := sub.Fetch(10, nats.MaxWait(2*time.Second))
-			if err != nil && err != nats.ErrTimeout {
+			if err != nil && !errors.Is(err, nats.ErrTimeout) {
 				s.log.Error("meta fetch messages", "error", err)
+				sleepCtx(ctx, fetchErrorBackoff)
 				continue
 			}
 			for _, msg := range msgs {
@@ -115,8 +85,10 @@ func (s *MetaSubscriber) handleMessage(ctx context.Context, msg *nats.Msg, handl
 	if s.internalToken != "" {
 		token := msg.Header.Get("X-Internal-Token")
 		if token != s.internalToken {
-			s.log.Warn("dropped meta event: invalid internal token", "subject", msg.Subject)
-			_ = msg.Nak()
+			// Bounded: retried with backoff (covers token rotation), then terminated.
+			delivered, terminated := s.policy.retryOrTerm(msg)
+			s.log.Warn("rejected meta event: invalid internal token",
+				"subject", msg.Subject, "attempt", delivered, "terminated", terminated)
 			return
 		}
 	}
@@ -129,18 +101,12 @@ func (s *MetaSubscriber) handleMessage(ctx context.Context, msg *nats.Msg, handl
 	}
 
 	if err := handler(ctx, event); err != nil {
-		meta, metaErr := msg.Metadata()
-		deliveries := 1
-		if metaErr == nil && meta != nil {
-			deliveries = int(meta.NumDelivered)
-		}
-		if deliveries >= s.maxDeliver {
-			s.log.Error("meta handler terminal failure", "type", event.Type, "event_id", event.EventID, "error", err)
-			_ = msg.Term()
+		delivered, terminated := s.policy.retryOrTerm(msg)
+		if terminated {
+			s.log.Error("meta handler terminal failure", "type", event.Type, "event_id", event.EventID, "attempt", delivered, "error", err)
 			return
 		}
-		s.log.Warn("meta handler retry", "type", event.Type, "event_id", event.EventID, "attempt", deliveries, "error", err)
-		_ = msg.Nak()
+		s.log.Warn("meta handler retry", "type", event.Type, "event_id", event.EventID, "attempt", delivered, "error", err)
 		return
 	}
 	_ = msg.Ack()

@@ -27,6 +27,16 @@ type NATS struct {
 	InternalToken    string
 	MaxPublishRetry  int
 	PublishRetryWait time.Duration
+
+	// Stream limits applied when the stream is created, or filled in when an
+	// existing stream has none set. Zero means "use the package default".
+	StreamMaxAge   time.Duration
+	StreamMaxBytes int64
+
+	// Consumer redelivery policy. Zero means "use the package default".
+	ConsumerMaxDeliver int
+	RetryBaseDelay     time.Duration
+	RetryMaxDelay      time.Duration
 }
 
 func (h HTTP) Addr() string {
@@ -59,6 +69,12 @@ func LoadNATS() NATS {
 		InternalToken:    getEnv("INTERNAL_SERVICE_TOKEN", ""),
 		MaxPublishRetry:  getEnvInt("NATS_PUBLISH_MAX_RETRIES", 3),
 		PublishRetryWait: getEnvDuration("NATS_PUBLISH_RETRY_WAIT", 200*time.Millisecond),
+
+		StreamMaxAge:       getEnvDuration("NATS_STREAM_MAX_AGE", 0),
+		StreamMaxBytes:     getEnvInt64("NATS_STREAM_MAX_BYTES", 0),
+		ConsumerMaxDeliver: getEnvInt("NATS_CONSUMER_MAX_DELIVER", 0),
+		RetryBaseDelay:     getEnvDuration("NATS_RETRY_BASE_DELAY", 0),
+		RetryMaxDelay:      getEnvDuration("NATS_RETRY_MAX_DELAY", 0),
 	}
 }
 
@@ -72,6 +88,16 @@ func getEnv(key, fallback string) string {
 func getEnvInt(key string, fallback int) int {
 	if v := os.Getenv(key); v != "" {
 		n, err := strconv.Atoi(v)
+		if err == nil {
+			return n
+		}
+	}
+	return fallback
+}
+
+func getEnvInt64(key string, fallback int64) int64 {
+	if v := os.Getenv(key); v != "" {
+		n, err := strconv.ParseInt(v, 10, 64)
 		if err == nil {
 			return n
 		}

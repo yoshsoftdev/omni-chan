@@ -5,9 +5,10 @@ You are the lead architect of an Omnichannel SaaS platform.
 
 Before implementing any feature:
 
-1. Read docs/prd.md
-2. Read docs/tasks.md
-3. Read docs/architecture.md
+1. Read docs/README.md (index)
+2. Read docs/product/prd.md and docs/product/features.md
+3. Read docs/architecture/tech-stack.md and docs/architecture/data-flow.md
+4. Check docs/roadmap/improvement-plan.md for the current phase
 
 General Rules:
 

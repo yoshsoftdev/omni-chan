@@ -3,13 +3,14 @@ package nats
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
 
 	"github.com/nats-io/nats.go"
-	sharedevents "github.com/omnichannel/omni-chan-v2/shared/events"
 	sharedconfig "github.com/omnichannel/omni-chan-v2/shared/config"
+	sharedevents "github.com/omnichannel/omni-chan-v2/shared/events"
 )
 
 type HandlerFunc func(ctx context.Context, envelope sharedevents.Envelope) error
@@ -19,6 +20,7 @@ type Subscriber struct {
 	cfg           sharedconfig.NATS
 	log           *slog.Logger
 	internalToken string
+	policy        RedeliveryPolicy
 }
 
 func NewSubscriber(conn *nats.Conn, cfg sharedconfig.NATS, log *slog.Logger) (*Subscriber, error) {
@@ -26,7 +28,7 @@ func NewSubscriber(conn *nats.Conn, cfg sharedconfig.NATS, log *slog.Logger) (*S
 	if err != nil {
 		return nil, fmt.Errorf("jetstream: %w", err)
 	}
-	s := &Subscriber{js: js, cfg: cfg, log: log, internalToken: cfg.InternalToken}
+	s := &Subscriber{js: js, cfg: cfg, log: log, internalToken: cfg.InternalToken, policy: RedeliveryPolicyFrom(cfg)}
 	if err := s.ensureStream(); err != nil {
 		return nil, err
 	}
@@ -34,21 +36,7 @@ func NewSubscriber(conn *nats.Conn, cfg sharedconfig.NATS, log *slog.Logger) (*S
 }
 
 func (s *Subscriber) ensureStream() error {
-	_, err := s.js.StreamInfo(s.cfg.StreamName)
-	if err == nil {
-		return nil
-	}
-	_, err = s.js.AddStream(&nats.StreamConfig{
-		Name:      s.cfg.StreamName,
-		Subjects:  []string{"events.>"},
-		Retention: nats.LimitsPolicy,
-		Storage:   nats.FileStorage,
-	})
-	if err != nil {
-		return fmt.Errorf("create stream %s: %w", s.cfg.StreamName, err)
-	}
-	s.log.Info("created jetstream", "stream", s.cfg.StreamName)
-	return nil
+	return EnsureStream(s.js, WebhookStreamSpec(s.cfg), s.log)
 }
 
 func (s *Subscriber) Subscribe(ctx context.Context, consumerName string, handler HandlerFunc) error {
@@ -66,8 +54,9 @@ func (s *Subscriber) Subscribe(ctx context.Context, consumerName string, handler
 			default:
 			}
 			msgs, err := sub.Fetch(10, nats.MaxWait(2*time.Second))
-			if err != nil && err != nats.ErrTimeout {
+			if err != nil && !errors.Is(err, nats.ErrTimeout) {
 				s.log.Error("fetch messages", "error", err)
+				sleepCtx(ctx, fetchErrorBackoff)
 				continue
 			}
 			for _, msg := range msgs {
@@ -83,8 +72,10 @@ func (s *Subscriber) handleMessage(ctx context.Context, msg *nats.Msg, handler H
 	if s.internalToken != "" {
 		token := msg.Header.Get("X-Internal-Token")
 		if token != s.internalToken {
-			s.log.Warn("dropped event: invalid internal token", "subject", msg.Subject)
-			_ = msg.Nak()
+			// Bounded: retried with backoff (covers token rotation), then terminated.
+			delivered, terminated := s.policy.retryOrTerm(msg)
+			s.log.Warn("rejected event: invalid internal token",
+				"subject", msg.Subject, "attempt", delivered, "terminated", terminated)
 			return
 		}
 	}
@@ -97,8 +88,12 @@ func (s *Subscriber) handleMessage(ctx context.Context, msg *nats.Msg, handler H
 	}
 
 	if err := handler(ctx, envelope); err != nil {
-		s.log.Error("handler failed", "type", envelope.Type, "error", err)
-		_ = msg.Nak()
+		delivered, terminated := s.policy.retryOrTerm(msg)
+		if terminated {
+			s.log.Error("handler terminal failure", "type", envelope.Type, "event_id", envelope.ID, "attempt", delivered, "error", err)
+			return
+		}
+		s.log.Warn("handler retry", "type", envelope.Type, "event_id", envelope.ID, "attempt", delivered, "error", err)
 		return
 	}
 	_ = msg.Ack()

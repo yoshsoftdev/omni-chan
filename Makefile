@@ -1,4 +1,4 @@
-.PHONY: run run-webhook run-backend run-storage test lint migrate-up migrate-down docker-up docker-down
+.PHONY: run run-webhook run-backend run-storage test test-race test-frontend test-e2e test-all lint migrate-up migrate-down docker-up docker-down
 
 run:
 	$(MAKE) -C services/backend-service run
@@ -17,6 +17,20 @@ test:
 	cd shared && go test ./... -count=1
 	cd services/webhook-service && go test ./... -count=1
 	cd services/storage-service && go test ./... -count=1
+
+test-race:
+	cd shared && go test -race ./... -count=1
+	cd services/backend-service && go test -race ./... -count=1
+	cd services/webhook-service && go test -race ./... -count=1
+	cd services/storage-service && go test -race ./... -count=1
+
+test-frontend:
+	cd frontend && pnpm test && pnpm typecheck
+
+test-e2e:
+	cd frontend && pnpm test:e2e
+
+test-all: test-race test-frontend test-e2e
 
 lint:
 	$(MAKE) -C services/backend-service lint

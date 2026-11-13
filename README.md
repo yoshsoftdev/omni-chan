@@ -68,6 +68,28 @@ make run
 
 Default port: `8082`
 
+## Port per environment
+
+Port berbeda di tiap cara menjalankan. Selalu cek tabel ini dan file `.env` yang dipakai.
+
+| Service | Default di kode | docker-compose | systemd (`deploy/`) | Dev LAN (`.env` contoh) |
+|---|---|---|---|---|
+| frontend | 3000 (`next dev`) | – | 8095 | 8095 |
+| backend-service | 8080 | 8090 (internal) | 8070 | 8066 |
+| webhook-service | 8081 | 8081 (publik) | 8090 | 8060 |
+| storage-service | 8082 | 8082 (internal) | – | 8065 |
+
+> Port 8090 dipakai **backend** di docker-compose tapi **webhook** di systemd. Jangan menyalin `.env` antar cara deploy tanpa menyesuaikan port.
+
+## Test
+
+```bash
+make test-race       # semua modul Go dengan race detector
+make test-frontend   # vitest + typecheck
+make test-e2e        # Playwright (backend di-mock); sekali saja: cd frontend && pnpm test:e2e:install
+make test-all        # ketiganya
+```
+
 ## Structure
 
 ```
@@ -77,6 +99,6 @@ services/
   storage-service/   — Media/File storage service (submodule)
 shared/                — shared Go packages (parent repo)
 frontend/              — Next.js (submodule)
-docs/                  — PRD, tasks, architecture
+docs/                  — mulai dari docs/README.md (PRD, fitur, arsitektur, roadmap)
 deploy/                — systemd + nginx
 ```

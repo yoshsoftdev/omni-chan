@@ -22,3 +22,7 @@ frontend/.env.local
 # IDE
 .idea/
 .vscode/
+
+# Local artifacts
+dump.rdb
+graphify-out/
