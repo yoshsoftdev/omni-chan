@@ -7,6 +7,7 @@ Mulai dari sini. Urutan baca untuk anggota baru: **PRD → Fitur → Tech stack 
 ```
 docs/
 ├── README.md                  ← index ini
+├── TODO.md                    ← checklist progres (centang tiap butir selesai)
 ├── product/                   apa yang dibangun
 │   ├── prd.md
 │   └── features.md            status fitur (sumber kebenaran tunggal)
@@ -47,13 +48,13 @@ docs/
 | Inbox | [Assignment](domain/inbox/assignment-rules.md) · [Lifecycle](domain/inbox/conversation-lifecycle.md) · [SLA](domain/inbox/sla-tracking.md) |
 | Meta | [Embedded signup](domain/meta/embedded-signup-flow.md) · [Template sync](domain/meta/template-sync-strategy.md) · [Webhook catalog](domain/meta/webhook-event-catalog.md) |
 | Keamanan | [Webhook](security/webhook-security-review.md) · [Token Meta](security/meta-token-strategy.md) · [Embedded signup](security/embedded-signup-security-review.md) |
-| Rencana | [Roadmap perbaikan](roadmap/improvement-plan.md) |
+| Rencana | [**TODO / progres**](TODO.md) · [Roadmap perbaikan](roadmap/improvement-plan.md) |
 
 ## Aturan menulis dokumen
 
 1. **Satu topik, satu tempat.** Update dokumen yang sudah ada, jangan buat salinan baru.
 2. Keputusan arsitektur → ADR baru di `adr/` (nomor berikutnya: **0008**). Jangan mengedit ADR yang sudah diterima; buat ADR pengganti.
-3. Status fitur hanya di `product/features.md`, di-update dalam PR yang sama dengan kodenya.
+3. Status fitur hanya di `product/features.md`, progres pekerjaan di `TODO.md`; keduanya di-update dalam PR yang sama dengan kodenya.
 4. Catatan fase/review yang sudah selesai → `archive/`.
 5. **Jangan pernah** menulis token, API key, password, atau nomor pelanggan asli di dokumen. Pakai `<REDACTED>` atau data contoh.
 6. Nama file: `kebab-case.md`, bahasa Indonesia atau Inggris secara konsisten dalam satu dokumen.

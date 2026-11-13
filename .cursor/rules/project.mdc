@@ -8,7 +8,8 @@ Before implementing any feature:
 1. Read docs/README.md (index)
 2. Read docs/product/prd.md and docs/product/features.md
 3. Read docs/architecture/tech-stack.md and docs/architecture/data-flow.md
-4. Check docs/roadmap/improvement-plan.md for the current phase
+4. Check docs/TODO.md for the next unchecked item (details in docs/roadmap/improvement-plan.md)
+5. When an item is done, tick it in docs/TODO.md with its commit hash
 
 General Rules:
 

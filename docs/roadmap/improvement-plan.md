@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | Status | Draft, disusun 2026-11-13 |
-| Cara pakai | Kerjakan **berurutan, satu langkah per PR**. Centang `[x]` saat Definition of Done terpenuhi. |
+| Cara pakai | Kerjakan **berurutan, satu langkah per PR**. Centang `[x]` saat Definition of Done terpenuhi, di sini **dan** di [TODO.md](../TODO.md). |
 | Terkait | [PRD](../product/prd.md) · [Fitur](../product/features.md) · [Tech stack](../architecture/tech-stack.md) · [Alur data](../architecture/data-flow.md) |
 
 ## Pemetaan masalah → fase
@@ -56,6 +56,7 @@ Ukuran: **S** ≤ 2 hari, **M** ≤ 1 minggu, **L** > 1 minggu.
 
 ### Fase T — Tooling & baseline (selesai sebelum fase 0)
 - [x] T1 Playwright 1.64 + harness e2e (`frontend/e2e`, backend di-mock, kontrak API dikunci), 4 smoke test auth
+- [x] T3 Plugin agent **ponytail** 5.3.3 terpasang (scope user)
 - [x] T2 Baseline hijau: 3 paket test yang gagal build, 2 test usang, 1 peringatan vet, dan **data race nyata** di `internal/media/metrics.go` (counter dipakai konkuren oleh api & worker) diperbaiki
 
 ## Fase 1 — Dokumen (S) · *sebagian besar selesai*
