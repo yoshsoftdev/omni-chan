@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Report backend routes missing from docs/openapi/v1.yaml (TODO 6.6, S6).
 
-Usage: python3 -I scripts/openapi_coverage.py [--list]
-Exits 0; it is a progress report, not a gate (the spec is incomplete today).
+Usage: python3 -I scripts/openapi_coverage.py [--list] [--check]
+--check exits 1 when any route is undocumented (CI gate: every route must be in the spec).
 """
 import collections
 import re
@@ -27,18 +27,36 @@ def backend_routes():
     return routes
 
 
+def documented_operations():
+    """(METHOD, path shape) for every operation in the spec."""
+    ops, path = set(), None
+    for line in SPEC.read_text().splitlines():
+        if m := re.match(r"^  (/[^:]*):\s*$", line):
+            path = m.group(1)
+        elif path and (m := re.match(r"^    (get|post|put|patch|delete):", line)):
+            ops.add((m.group(1).upper(), shape(path)))
+        elif line and not line.startswith(" "):
+            path = None  # left the paths: section
+    return ops
+
+
+def shape(path):
+    return re.sub(r"\{[^}]+\}", "{}", path)
+
+
 def main():
-    shape = lambda p: re.sub(r"\{[^}]+\}", "{}", p)
-    documented = {shape(p) for p in re.findall(r"^  (/[^:]*):\s*$", SPEC.read_text(), re.M)}
+    documented = documented_operations()
     routes = backend_routes()
-    missing = [r for r in routes if shape(r[1]) not in documented]
-    print(f"OpenAPI coverage: {len(routes) - len(missing)}/{len(routes)} backend routes have a documented path")
+    missing = [r for r in routes if (r[0], shape(r[1])) not in documented]
+    print(f"OpenAPI coverage: {len(routes) - len(missing)}/{len(routes)} backend operations documented")
     by_group = collections.Counter(path.split("/")[1] for _, path in missing)
     for group, n in by_group.most_common():
         print(f"  /{group}: {n} missing")
     if "--list" in sys.argv:
         for method, path in sorted(missing, key=lambda r: (r[1], r[0])):
             print(f"    {method:6} {path}")
+    if "--check" in sys.argv and missing:
+        sys.exit(1)
 
 
 if __name__ == "__main__":

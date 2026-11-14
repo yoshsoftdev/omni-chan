@@ -87,8 +87,8 @@
 | S2 ✅ | Integration test | Postgres via service container CI + nats-server embedded (tanpa testcontainers) | 3 |
 | S3 ✅ | E2E test | Playwright untuk 5 alur utama | 3 |
 | S4 | Observability | metrik JSON custom → OpenTelemetry SDK + Prometheus + Grafana + Loki/Tempo, Sentry untuk FE/BE | 4 |
-| S5 | Type-safe SQL | SQL tulis tangan → `sqlc` (bertahap per modul) | 6 |
-| S6 | Kontrak API FE | DTO + `assertDomain*` tulis tangan → generate dari `docs/openapi/v1.yaml` (`openapi-typescript` + `openapi-fetch`) | 6 |
+| S5 ✅ | Type-safe SQL | SQL tulis tangan → `sqlc` (bertahap per modul; `make sqlc`, cek drift di CI) | 6 |
+| S6 ✅ | Kontrak API FE | `docs/openapi/v1.yaml` lengkap (174/174, dijaga CI) → tipe `schema.gen.ts` (`pnpm gen:api`); modul FE pindah ke tipe ini saat disentuh | 6 |
 | S7 | Design system | 3 komponen → shadcn/ui (Radix) + token dari `ui-design.mdc` + Storybook | 5 |
 | S8 ✅ | Package manager FE | npm + pnpm → **pnpm saja** | 0 |
 | S9 | Event bus | NATS JetStream → **Apache Kafka** (atau Redpanda, kompatibel API Kafka) lewat abstraksi `EventBus` | 8 |

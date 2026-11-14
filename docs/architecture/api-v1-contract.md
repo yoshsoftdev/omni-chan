@@ -1,5 +1,7 @@
 # API v1 Contract — Omni-Chan
 
+> **Source of truth for the wire contract is [`docs/openapi/v1.yaml`](../openapi/v1.yaml)** (all 174 operations, checked in CI). Changing a handler means updating the spec in the same change; then run `pnpm gen:api` in `frontend/`. This document keeps the design rationale (Phase 7).
+
 **Phase 7 — Design specification only.**  
 No implementation. Aligns frontend domain layers (Campaign, Template, Channel) with backend wire contracts.
 

@@ -22,11 +22,11 @@ _Terakhir diperbarui: 2026-11-14_
 | 3 | Testing & CI | 6 / 6 ✅ |
 | 4 | Monitoring | 6 / 7 |
 | 5 | Design system | 6 / 6 |
-| 6 | Integritas data & pemecahan proses | 5 / 6 |
+| 6 | Integritas data & pemecahan proses | 6 / 6 |
 | 7 | UI/UX revamp | 0 / 7 |
 | 8 | Migrasi NATS → Kafka | 0 / 7 |
 | 9 | Fitur R3 | 0 / 5 |
-| **Total** | | **41 / 66** |
+| **Total** | | **42 / 66** |
 
 ## Perlu tindakan manual (pemilik repo)
 
@@ -114,10 +114,10 @@ _Terakhir diperbarui: 2026-11-14_
 - [x] **6.3** Backend dipecah jadi `cmd/api` (HTTP+WS), `cmd/event-consumer`, `cmd/scheduler` di atas `internal/app.Run(role)`; job scheduler dijaga advisory lock Postgres (`pkg/leader`, test 2 replika); consumer exit bila NATS tak ada. Compose, unit systemd, skrip install, Dockerfile, Makefile (`run-all`), dan scrape Prometheus (9106/9107) ikut diperbarui — `backend`
 - [x] **6.4** Subscriber legacy `events.>` dihapus: tidak ada publisher sejak 11.3. Ikut dihapus `LegacyConsumer`, pub/sub legacy di `shared/nats`, `Envelope`/`Subject`, dan webhook handler onboarding yang mati (±500 baris). Test tracing dipindah ke jalur `meta.>`. Pembersihan consumer durable `-legacy` di server: lihat `domain/events/nats-subjects.md` — `backend`, `shared`
 - [x] **6.5** WS resync: saat socket tersambung lagi, klien me-refetch state yang tampil (semua query aktif, plus thread/aktivitas/catatan inbox). Ini menggantikan cursor `created_at`, yang tidak menangkap perubahan status pesan. Unit test reconnect + e2e "pesan saat offline muncul setelah reconnect" — `frontend`
-- [ ] **6.6** `sqlc` + client TS dari OpenAPI
+- [x] **6.6** `sqlc` + client TS dari OpenAPI
   - ✅ S5: `sqlc` aktif (`sqlc.yaml`, `make sqlc`, cek drift `sqlc diff` di CI backend); `processed_events` sudah memakai query hasil generate. Modul lain dimigrasi saat disentuh.
   - ✅ Pipeline S6: `pnpm gen:api` menghasilkan `schema.gen.ts`; CI induk gagal bila hasil generate usang.
-  - ⏳ **Butuh keputusan:** spec OpenAPI baru mencakup 92/174 route (`python3 -I scripts/openapi_coverage.py --list`), dan sebagian schema usang (mis. `ReadinessResponse`). Tipe/klien hasil generate baru bisa dipakai fitur setelah spec lengkap dan akurat.
+  - ✅ Spec OpenAPI dilengkapi manual (keputusan 2026-11-15): 174/174 operasi, 140 schema dari tipe Go. Ringkasan/deskripsi lama dipertahankan, schema usang diganti. Kecocokan dengan perilaku nyata diuji pada API lokal: 51/51 respons (GET, POST create, GET by id) valid. CI induk job `openapi` gagal bila ada route tak terdokumentasi atau spec tidak valid (redocly).
 
 ## Fase 7 — UI/UX revamp
 

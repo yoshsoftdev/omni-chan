@@ -85,6 +85,19 @@ jobs:
       - run: go run ./cmd/migrate -direction=up
       - run: go test -race -count=1 -tags=integration ./...
 
+  openapi:
+    # docs/openapi/v1.yaml is the API contract: every backend route must be in it, and it must be valid.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+          token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
+      - name: every backend route is documented
+        run: python3 scripts/openapi_coverage.py --list --check
+      - name: spec is valid OpenAPI (errors fail, warnings do not)
+        run: docker run --rm -v "$PWD/docs/openapi":/spec redocly/cli:1.34.5 lint /spec/v1.yaml
+
   frontend:
     runs-on: ubuntu-latest
     defaults:
