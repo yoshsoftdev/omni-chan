@@ -22,11 +22,11 @@ _Terakhir diperbarui: 2026-11-14_
 | 3 | Testing & CI | 6 / 6 ✅ |
 | 4 | Monitoring | 6 / 7 |
 | 5 | Design system | 6 / 6 |
-| 6 | Integritas data & pemecahan proses | 3 / 6 |
+| 6 | Integritas data & pemecahan proses | 4 / 6 |
 | 7 | UI/UX revamp | 0 / 7 |
 | 8 | Migrasi NATS → Kafka | 0 / 7 |
 | 9 | Fitur R3 | 0 / 5 |
-| **Total** | | **39 / 66** |
+| **Total** | | **40 / 66** |
 
 ## Perlu tindakan manual (pemilik repo)
 
@@ -111,7 +111,7 @@ _Terakhir diperbarui: 2026-11-14_
 
 - [x] **6.1** Dedup wamid di DB: tabel klaim `message_wamids(team_id, wamid)` dalam transaksi insert (migrasi `000053`), tanpa pg_partman — [ADR 0008](adr/0008-message-wamid-dedup.md); integration test 16 insert paralel → 1 baris — `backend`
 - [x] **6.2** Idempotensi consumer di Postgres (`processed_events`, migrasi `000054`) dengan Redis sebagai cache (`CachedStore`); tak ada lagi fallback memori; purge per jam > MaxAge stream (8 hari). Redis sudah fail-fast saat startup — `backend`
-- [ ] **6.3** Pecah `cmd/api` → `api`, `event-consumer`, `scheduler`
+- [x] **6.3** Backend dipecah jadi `cmd/api` (HTTP+WS), `cmd/event-consumer`, `cmd/scheduler` di atas `internal/app.Run(role)`; job scheduler dijaga advisory lock Postgres (`pkg/leader`, test 2 replika); consumer exit bila NATS tak ada. Compose, unit systemd, skrip install, Dockerfile, Makefile (`run-all`), dan scrape Prometheus (9106/9107) ikut diperbarui — `backend`
 - [x] **6.4** Subscriber legacy `events.>` dihapus: tidak ada publisher sejak 11.3. Ikut dihapus `LegacyConsumer`, pub/sub legacy di `shared/nats`, `Envelope`/`Subject`, dan webhook handler onboarding yang mati (±500 baris). Test tracing dipindah ke jalur `meta.>`. Pembersihan consumer durable `-legacy` di server: lihat `domain/events/nats-subjects.md` — `backend`, `shared`
 - [ ] **6.5** WS resync dengan cursor saat reconnect
 - [ ] **6.6** `sqlc` + client TS dari OpenAPI

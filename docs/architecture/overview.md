@@ -9,7 +9,9 @@ Port tiap service **berbeda per environment**: lihat tabel "Port per environment
 |---|---|---|
 | frontend (Next.js) | ya, lewat nginx | Dashboard; mem-proxy `/api/*` dan `/ws` ke backend |
 | webhook-service | **ya, satu-satunya service publik** | Terima webhook Meta/Instagram, invoke automation publik, proxy media untuk Meta |
-| backend-service `cmd/api` | tidak | REST API v1, WebSocket, consumer event, job terjadwal |
+| backend-service `cmd/api` | tidak | REST API v1, WebSocket |
+| backend-service `cmd/event-consumer` | tidak | Consumer event webhook `meta.>` dari NATS (replika berbagi durable consumer) |
+| backend-service `cmd/scheduler` | tidak | Job terjadwal: window recontact, rekonsiliasi kampanye, purge `processed_events` (tiap job memegang advisory lock Postgres) |
 | backend-service `cmd/broadcast-orchestrator` / `cmd/broadcast-worker` | tidak | Penjadwalan dan pengiriman kampanye |
 | storage-service | tidak | Upload dan penyimpanan file |
 

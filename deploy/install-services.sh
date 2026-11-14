@@ -3,6 +3,7 @@ set -euo pipefail
 
 # Build and install Omni-Chan systemd services:
 #   omni-chan-backend   → 127.0.0.0:8070  (REST API + WebSocket /ws)
+#   omni-chan-event-consumer, omni-chan-scheduler (backend workers, no HTTP)
 #   omni-chan-frontend  → 0.0.0.0:8095   (Next.js)
 #   omni-chan-webhook   → 0.0.0.0:8090   (Meta/Telegram webhooks)
 #
@@ -174,6 +175,8 @@ install_backend() {
   (
     cd "${BACKEND_DIR}"
     GOWORK="${ROOT_DIR}/go.work" "${GO_BIN}" build -ldflags="-s -w" -o "${BACKEND_INSTALL}/bin/omni-chan-backend" ./cmd/api
+    GOWORK="${ROOT_DIR}/go.work" "${GO_BIN}" build -ldflags="-s -w" -o "${BACKEND_INSTALL}/bin/omni-chan-event-consumer" ./cmd/event-consumer
+    GOWORK="${ROOT_DIR}/go.work" "${GO_BIN}" build -ldflags="-s -w" -o "${BACKEND_INSTALL}/bin/omni-chan-scheduler" ./cmd/scheduler
   )
 
   echo "==> Installing backend migrations..."
@@ -184,9 +187,12 @@ install_backend() {
     echo "WARN: set HTTP_PORT=8070 in ${BACKEND_INSTALL}/.env"
   fi
 
-  install -m 644 "${ROOT_DIR}/deploy/omni-chan-backend.service" /etc/systemd/system/omni-chan-backend.service
-  sed -i "s/^User=.*/User=${RUN_USER}/" /etc/systemd/system/omni-chan-backend.service
-  sed -i "s/^Group=.*/Group=${RUN_USER}/" /etc/systemd/system/omni-chan-backend.service
+  local unit
+  for unit in omni-chan-backend omni-chan-event-consumer omni-chan-scheduler; do
+    install -m 644 "${ROOT_DIR}/deploy/${unit}.service" "/etc/systemd/system/${unit}.service"
+    sed -i "s/^User=.*/User=${RUN_USER}/" "/etc/systemd/system/${unit}.service"
+    sed -i "s/^Group=.*/Group=${RUN_USER}/" "/etc/systemd/system/${unit}.service"
+  done
   chown -R "${RUN_USER}:${RUN_USER}" "${BACKEND_INSTALL}"
 }
 
@@ -252,16 +258,16 @@ start_units() {
   systemctl daemon-reload
   if [[ "${START_SERVICE}" -eq 1 ]]; then
     [[ "${INSTALL_WEBHOOK}" -eq 1 ]] && systemctl enable --now omni-chan-webhook
-    [[ "${INSTALL_BACKEND}" -eq 1 ]] && systemctl enable --now omni-chan-backend
+    [[ "${INSTALL_BACKEND}" -eq 1 ]] && systemctl enable --now omni-chan-backend omni-chan-event-consumer omni-chan-scheduler
     [[ "${INSTALL_FRONTEND}" -eq 1 ]] && systemctl enable --now omni-chan-frontend
     echo ""
     [[ "${INSTALL_WEBHOOK}" -eq 1 ]] && systemctl --no-pager status omni-chan-webhook || true
-    [[ "${INSTALL_BACKEND}" -eq 1 ]] && systemctl --no-pager status omni-chan-backend || true
+    [[ "${INSTALL_BACKEND}" -eq 1 ]] && systemctl --no-pager status omni-chan-backend omni-chan-event-consumer omni-chan-scheduler || true
     [[ "${INSTALL_FRONTEND}" -eq 1 ]] && systemctl --no-pager status omni-chan-frontend || true
   else
     echo "Installed. Enable with:"
     [[ "${INSTALL_WEBHOOK}" -eq 1 ]] && echo "  systemctl enable --now omni-chan-webhook"
-    [[ "${INSTALL_BACKEND}" -eq 1 ]] && echo "  systemctl enable --now omni-chan-backend"
+    [[ "${INSTALL_BACKEND}" -eq 1 ]] && echo "  systemctl enable --now omni-chan-backend omni-chan-event-consumer omni-chan-scheduler"
     [[ "${INSTALL_FRONTEND}" -eq 1 ]] && echo "  systemctl enable --now omni-chan-frontend"
   fi
 }

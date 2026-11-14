@@ -10,7 +10,7 @@ run-storage:
 	$(MAKE) -C services/storage-service run
 
 run-backend:
-	$(MAKE) -C services/backend-service run
+	$(MAKE) -C services/backend-service run-all
 
 test:
 	$(MAKE) -C services/backend-service test

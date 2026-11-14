@@ -13,6 +13,10 @@ scrape_configs:
     static_configs:
       - targets: ["backend-service:9101"]
         labels: { service: backend-api }
+      - targets: ["backend-event-consumer:9106"]
+        labels: { service: backend-event-consumer }
+      - targets: ["backend-scheduler:9107"]
+        labels: { service: backend-scheduler }
       - targets: ["webhook-service:9104"]
         labels: { service: webhook-service }
       - targets: ["storage-service:9105"]

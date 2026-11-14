@@ -1,3 +1,27 @@
+# Shared by every backend role (api, event-consumer, scheduler).
+x-backend-env: &backend-env
+    APP_ENV: production
+    HTTP_PORT: 8090
+    DATABASE_URL: postgres://postgres:postgres@postgres:5432/omni_chan?sslmode=disable
+    REDIS_URL: redis://redis:6379/0
+    STORAGE_SERVICE_URL: http://storage-service:8082
+    NATS_URL: nats://nats:4222
+    NATS_STREAM_NAME: WEBHOOK_EVENTS
+    NATS_CONSUMER_ENABLED: "true"
+    INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-change-me-internal-token}
+    MEDIA_TOKEN_SECRET: ${MEDIA_TOKEN_SECRET}
+    MEDIA_TOKEN_TTL: ${MEDIA_TOKEN_TTL:-5m}
+    WEBHOOK_PUBLIC_BASE_URL: ${WEBHOOK_PUBLIC_BASE_URL}
+    JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+    JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+    META_APP_ID: ${META_APP_ID}
+    META_APP_SECRET: ${META_APP_SECRET}
+    META_EMBEDDED_CONFIG_ID: ${META_EMBEDDED_CONFIG_ID}
+    META_VERIFY_TOKEN: ${META_VERIFY_TOKEN}
+    META_API_VERSION: ${META_API_VERSION:-v21.0}
+    META_TOKEN_ENCRYPTION_KEY: ${META_TOKEN_ENCRYPTION_KEY:?set META_TOKEN_ENCRYPTION_KEY (base64 of 32 random bytes)}
+    OTP_DEFAULT_DEVICE_SLUG: ${OTP_DEFAULT_DEVICE_SLUG:-dgos-waba}
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -75,27 +99,7 @@ services:
       - "8090"
       - "9101" # /metrics /health /ready — internal only, never published
     environment:
-      APP_ENV: production
-      HTTP_PORT: 8090
-      DATABASE_URL: postgres://postgres:postgres@postgres:5432/omni_chan?sslmode=disable
-      REDIS_URL: redis://redis:6379/0
-      STORAGE_SERVICE_URL: http://storage-service:8082
-      NATS_URL: nats://nats:4222
-      NATS_STREAM_NAME: WEBHOOK_EVENTS
-      NATS_CONSUMER_ENABLED: "true"
-      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-change-me-internal-token}
-      MEDIA_TOKEN_SECRET: ${MEDIA_TOKEN_SECRET}
-      MEDIA_TOKEN_TTL: ${MEDIA_TOKEN_TTL:-5m}
-      WEBHOOK_PUBLIC_BASE_URL: ${WEBHOOK_PUBLIC_BASE_URL}
-      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
-      META_APP_ID: ${META_APP_ID}
-      META_APP_SECRET: ${META_APP_SECRET}
-      META_EMBEDDED_CONFIG_ID: ${META_EMBEDDED_CONFIG_ID}
-      META_VERIFY_TOKEN: ${META_VERIFY_TOKEN}
-      META_API_VERSION: ${META_API_VERSION:-v21.0}
-      META_TOKEN_ENCRYPTION_KEY: ${META_TOKEN_ENCRYPTION_KEY:?set META_TOKEN_ENCRYPTION_KEY (base64 of 32 random bytes)}
-      OTP_DEFAULT_DEVICE_SLUG: ${OTP_DEFAULT_DEVICE_SLUG:-dgos-waba}
+      <<: *backend-env
       METRICS_ADDR: ":9101"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:9101/ready"]
@@ -109,6 +113,48 @@ services:
       redis:
         condition: service_healthy
       nats:
+        condition: service_healthy
+
+  backend-event-consumer:
+    # Consumes webhook events (meta.>) from NATS; scale replicas freely.
+    build:
+      context: .
+      dockerfile: services/backend-service/Dockerfile
+    command: ["./event-consumer"]
+    expose:
+      - "9106" # /metrics /health /ready — internal only, never published
+    environment:
+      <<: *backend-env
+      METRICS_ADDR: ":9106"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:9106/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+    depends_on:
+      backend-service:
+        condition: service_healthy
+
+  backend-scheduler:
+    # Periodic jobs (window recontact, delivery reconcile, purge); each job holds a Postgres advisory lock.
+    build:
+      context: .
+      dockerfile: services/backend-service/Dockerfile
+    command: ["./scheduler"]
+    expose:
+      - "9107" # /metrics /health /ready — internal only, never published
+    environment:
+      <<: *backend-env
+      METRICS_ADDR: ":9107"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:9107/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+    depends_on:
+      backend-service:
         condition: service_healthy
 
   storage-service:

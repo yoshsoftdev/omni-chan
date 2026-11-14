@@ -20,7 +20,9 @@ flowchart LR
   end
   subgraph Private
     FE[frontend Next.js]
-    API[backend cmd/api<br/>REST + WS + consumer + job]
+    API[backend cmd/api<br/>REST + WS]
+    CON[backend cmd/event-consumer]
+    SCH[backend cmd/scheduler]
     ORC[broadcast-orchestrator]
     WRK[broadcast-worker]
     ST[storage-service]
@@ -38,7 +40,11 @@ flowchart LR
   Ext -->|automation invoke| WH
   WH -->|publish meta.*| NATS
   WH -->|HTTP internal + X-Internal-Token| API
-  NATS -->|pull consumer| API
+  NATS -->|pull consumer| CON
+  CON --> PG
+  CON -->|realtime via Redis| RD
+  SCH -->|advisory lock + jobs| PG
+  SCH -->|recontact send| Meta
   API --> PG
   API --> RD
   API -->|send| Meta
@@ -62,7 +68,7 @@ sequenceDiagram
   participant W as webhook-service
   participant R as Redis
   participant N as NATS (WEBHOOK_EVENTS)
-  participant C as cmd/api consumer
+  participant C as cmd/event-consumer
   participant P as Postgres
   participant H as WS Hub (Redis pub/sub)
   participant B as Browser
@@ -143,8 +149,8 @@ Pola **transactional outbox** sudah dipakai di jalur ini. Pertahankan pola ini s
 | Forward pesan masuk | consumer `message.received` → `internal/automation` → POST ke URL klien | – |
 | Media Instagram | backend membuat token media → Meta GET `/media/{token}` di webhook-service → backend → storage → stream balik | Tidak lewat NATS karena Meta butuh respons HTTP langsung (lihat [overview](overview.md)) |
 | Upload file | Browser → backend `storageproxy` → storage-service → disk/MinIO | – |
-| Window recontact | ticker di `cmd/api` → `ListDueWindowRecontacts` → klaim ledger (`INSERT … ON CONFLICT DO NOTHING`) → kirim | Jalan di setiap replika, tapi klaim UNIQUE menjamin satu kiriman per pesan pelanggan |
-| Rekonsiliasi kampanye | ticker 24 jam di `cmd/api` | Idempoten, tapi tetap jalan di setiap replika |
+| Window recontact | ticker di `cmd/scheduler` (advisory lock) → `ListDueWindowRecontacts` → klaim ledger (`INSERT … ON CONFLICT DO NOTHING`) → kirim | Satu replika per tick; klaim UNIQUE tetap menjamin satu kiriman per pesan pelanggan |
+| Rekonsiliasi kampanye | ticker 24 jam di `cmd/scheduler` (advisory lock) | Satu replika pada satu waktu |
 | Template sync | API/job → Meta → `templates` | Lihat [`domain/meta/template-sync-strategy.md`](../domain/meta/template-sync-strategy.md) |
 
 ## 6. Risiko per alur
@@ -158,9 +164,9 @@ Pola **transactional outbox** sudah dipakai di jalur ini. Pertahankan pola ini s
 | D5 ✅ | `ensureStream` tidak update config / error sementara dianggap stream hilang (diperbaiki: `EnsureStream`) | `publisher/nats.go` | Perubahan konfigurasi tidak pernah diterapkan | 0 |
 | D6 ✅ | Tidak ada `Nats-Msg-Id` (diperbaiki) | publisher | Dedup server-side JetStream tidak aktif | 0 |
 | D7 ✅ | Partisi hanya DEFAULT; unique `(wamid, created_at)` tidak mencegah wamid ganda (diperbaiki: `message_wamids`, ADR 0008) | migrasi `000015`, `000012` | Dedup bergantung pada check-then-insert + Redis 24 jam | 6 |
-| D8 ✅ | Idempotensi fallback ke memory bila Redis tak dikonfigurasi (diperbaiki: `processed_events` di Postgres + Redis cache) | `cmd/api/main.go` | Duplikat setelah restart / antar replika | 6 |
+| D8 ✅ | Idempotensi fallback ke memory bila Redis tak dikonfigurasi (diperbaiki: `processed_events` di Postgres + Redis cache) | `internal/app/app.go` | Duplikat setelah restart / antar replika | 6 |
 | D9 | Fanout WS via Redis pub/sub bersifat at-most-once | `websocket/hub` | Event hilang saat reconnect; klien harus resync delta | 6 |
-| D10 ✅ | Dua jalur consumer paralel (`events.>` legacy + `meta.>`) (diperbaiki: jalur legacy dihapus, 6.4) | `cmd/api/main.go` | Kompleksitas, potensi proses dobel | 6 |
+| D10 ✅ | Dua jalur consumer paralel (`events.>` legacy + `meta.>`) (diperbaiki: jalur legacy dihapus, 6.4) | `internal/app/app.go` | Kompleksitas, potensi proses dobel | 6 |
 | D11 ✅ | `/api/v1/metrics` terbuka di service publik (diperbaiki: wajib token internal) | `webhook-service/cmd/main.go` | Kebocoran info operasional | 0 |
 | D13 ✅ | Webhook di-ACK 200 + kunci idempotensi tetap tertanda walau publish gagal → pesan hilang (diperbaiki: lepas kunci + 503) | `webhook-service/internal/processor` | Tinggi | 0 |
 | D14 ✅ | Error DB saat resolve tenant dianggap terminal → event masuk DLQ tanpa retry | `eventconsumer/resolver` | Tinggi | 3 |
@@ -190,7 +196,7 @@ flowchart LR
 ```
 
 Perubahan kunci:
-- `cmd/api` dipecah menjadi `api` (HTTP + WS), `event-consumer`, dan `scheduler` (job singleton dengan leader lock).
+- ✅ `cmd/api` dipecah menjadi `api` (HTTP + WS), `event-consumer`, dan `scheduler` (job singleton dengan leader lock) — 6.3.
 - Dedup final di Postgres, bukan di Redis.
 - Trace context ikut di header event.
 - Event bus di belakang interface sehingga NATS → Kafka bisa diganti per stream.
