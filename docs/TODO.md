@@ -21,12 +21,12 @@ _Terakhir diperbarui: 2026-11-14_
 | 2 | Daftar fitur & triase | 2 / 5 |
 | 3 | Testing & CI | 6 / 6 ✅ |
 | 4 | Monitoring | 6 / 7 |
-| 5 | Design system | 1 / 6 |
+| 5 | Design system | 2 / 6 |
 | 6 | Integritas data & pemecahan proses | 0 / 6 |
 | 7 | UI/UX revamp | 0 / 7 |
 | 8 | Migrasi NATS → Kafka | 0 / 7 |
 | 9 | Fitur R3 | 0 / 5 |
-| **Total** | | **30 / 66** |
+| **Total** | | **31 / 66** |
 
 ## Perlu tindakan manual (pemilik repo)
 
@@ -98,7 +98,7 @@ _Terakhir diperbarui: 2026-11-14_
 ## Fase 5 — Design system
 
 - [x] **5.1** Audit UI semua route (46 halaman; empty/error/loading) — `design/ui-audit.md`
-- [ ] **5.2** Design token dari `ui-design.mdc` → CSS variables + Tailwind
+- [x] **5.2** Design token: token `globals.css`/Tailwind dipakai di seluruh UI (hex, palet mentah, `bg-white`, font 10–11 px → token; dark mode Window Recontact/inbox ikut benar) — `frontend` (lihat `design/ui-audit.md`)
 - [ ] **5.3** Pustaka komponen shadcn/ui
 - [ ] **5.4** Pola layout (AppShell, PageHeader, FilterBar, DetailPanel, Wizard)
 - [ ] **5.5** Storybook + visual regression

@@ -37,6 +37,24 @@ Diverifikasi dengan audit ulang mode error/loading/404 di 32 route, ditambah `ts
 - Wizard Create Campaign dan Inbox masih punya promise rejection yang tidak ditangani (error tetap tampil di Inbox).
 - `getById` di repository template dan channel masih menelan semua error.
 
+**5.2 token (2026-11-15):**
+- Token warna di `globals.css` sudah sesuai palet `ui-design.mdc`; nilai `--info` dikoreksi ke `#2563EB`.
+- Di 76 file komponen:
+  - hex langsung (`#6B7280`, `#E5E7EB`, `#111111`, `#F6F7F9`, `#2563EB`) diganti token;
+  - kelas palet status (emerald/green, amber, red/rose, blue/sky, slate) diganti `success`/`warning`/`error`/`info`/`muted`;
+  - `bg-white` pada kartu/input bergaris diganti `bg-card`;
+  - override `dark:` yang kini redundan dihapus;
+  - font 10–11 px dinaikkan ke `text-xs` (12 px);
+  - tombol teal di create-template diganti tombol primary.
+- Efek di dark mode: Window Recontact dan panel inbox tidak lagi berupa kartu putih dengan teks tak terbaca.
+- Sengaja tidak diubah:
+  - preview WhatsApp (meniru warna dan ukuran WhatsApp);
+  - warna dan label chart;
+  - sel kalender jadwal.
+- Sisa yang menunggu keputusan:
+  - warna violet/pink di role badge, audience cell, devices, dan team workspace (aturan melarang ungu, tapi ini label kategori, bukan status);
+  - `bg-slate-400` untuk dot status offline.
+
 ## Temuan utama (urut prioritas)
 
 ### P1 — Error disamarkan sebagai kosong / tidak ditemukan
