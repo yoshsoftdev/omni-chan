@@ -115,6 +115,9 @@ _Terakhir diperbarui: 2026-11-14_
 - [x] **6.4** Subscriber legacy `events.>` dihapus: tidak ada publisher sejak 11.3. Ikut dihapus `LegacyConsumer`, pub/sub legacy di `shared/nats`, `Envelope`/`Subject`, dan webhook handler onboarding yang mati (±500 baris). Test tracing dipindah ke jalur `meta.>`. Pembersihan consumer durable `-legacy` di server: lihat `domain/events/nats-subjects.md` — `backend`, `shared`
 - [x] **6.5** WS resync: saat socket tersambung lagi, klien me-refetch state yang tampil (semua query aktif, plus thread/aktivitas/catatan inbox). Ini menggantikan cursor `created_at`, yang tidak menangkap perubahan status pesan. Unit test reconnect + e2e "pesan saat offline muncul setelah reconnect" — `frontend`
 - [ ] **6.6** `sqlc` + client TS dari OpenAPI
+  - ✅ S5: `sqlc` aktif (`sqlc.yaml`, `make sqlc`, cek drift `sqlc diff` di CI backend); `processed_events` sudah memakai query hasil generate. Modul lain dimigrasi saat disentuh.
+  - ✅ Pipeline S6: `pnpm gen:api` menghasilkan `schema.gen.ts`; CI induk gagal bila hasil generate usang.
+  - ⏳ **Butuh keputusan:** spec OpenAPI baru mencakup 92/174 route (`python3 -I scripts/openapi_coverage.py --list`), dan sebagian schema usang (mis. `ReadinessResponse`). Tipe/klien hasil generate baru bisa dipakai fitur setelah spec lengkap dan akurat.
 
 ## Fase 7 — UI/UX revamp
 
