@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/omnichannel/omni-chan-v2/shared/observability"
 	"log/slog"
 	"time"
 
@@ -78,6 +79,7 @@ func (p *BroadcastPublisher) PublishJSON(ctx context.Context, subject string, pa
 	if p.internalToken != "" {
 		msg.Header.Set("X-Internal-Token", p.internalToken)
 	}
+	observability.Inject(ctx, msg.Header)
 	var lastErr error
 	for attempt := 1; attempt <= p.maxRetry; attempt++ {
 		select {

@@ -1,0 +1,163 @@
+{
+ "uid": "omni-ingress",
+ "title": "Ingress webhook",
+ "schemaVersion": 39,
+ "time": {
+  "from": "now-6h",
+  "to": "now"
+ },
+ "refresh": "30s",
+ "tags": [
+  "omni"
+ ],
+ "panels": [
+  {
+   "type": "timeseries",
+   "title": "Webhook requests / published / failed",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 0,
+    "w": 12,
+    "h": 8
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "reqps"
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "rate(omni_webhook_requests_total[5m])",
+     "legendFormat": "requests"
+    },
+    {
+     "refId": "B",
+     "expr": "rate(omni_webhook_events_published_total[5m])",
+     "legendFormat": "published"
+    },
+    {
+     "refId": "C",
+     "expr": "rate(omni_webhook_publish_failures_total[5m])",
+     "legendFormat": "publish failed"
+    },
+    {
+     "refId": "D",
+     "expr": "rate(omni_webhook_duplicates_suppressed_total[5m])",
+     "legendFormat": "duplicates"
+    }
+   ],
+   "id": 1
+  },
+  {
+   "type": "timeseries",
+   "title": "HTTP status (webhook-service)",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 12,
+    "y": 0,
+    "w": 12,
+    "h": 8
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "reqps"
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum by (status) (rate(http_requests_total{service=\"webhook-service\"}[5m]))",
+     "legendFormat": "{{status}}"
+    }
+   ],
+   "id": 2
+  },
+  {
+   "type": "timeseries",
+   "title": "p95 latency by route",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 8,
+    "w": 12,
+    "h": 8
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "s"
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "histogram_quantile(0.95, sum by (le, route) (rate(http_request_duration_seconds_bucket{service=\"webhook-service\"}[5m])))",
+     "legendFormat": "{{route}}"
+    }
+   ],
+   "id": 3
+  },
+  {
+   "type": "timeseries",
+   "title": "DLQ depth",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 12,
+    "y": 8,
+    "w": 12,
+    "h": 8
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short"
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum by (subject) (jetstream_dlq_messages)",
+     "legendFormat": "{{subject}}"
+    }
+   ],
+   "id": 4
+  },
+  {
+   "type": "logs",
+   "title": "Webhook errors",
+   "datasource": {
+    "type": "loki",
+    "uid": "loki"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 16,
+    "w": 24,
+    "h": 10
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "{service=\"webhook-service\", level=\"ERROR\"}"
+    }
+   ],
+   "id": 5
+  }
+ ]
+}

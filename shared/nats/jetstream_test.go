@@ -15,6 +15,9 @@ import (
 	"github.com/nats-io/nats.go"
 	sharedconfig "github.com/omnichannel/omni-chan-v2/shared/config"
 	sharedevents "github.com/omnichannel/omni-chan-v2/shared/events"
+	"github.com/omnichannel/omni-chan-v2/shared/observability"
+	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func quietLog() *slog.Logger { return slog.New(slog.NewTextHandler(io.Discard, nil)) }
@@ -367,5 +370,95 @@ func TestMetaSubscriber_ValidEventHandledOnce(t *testing.T) {
 	}
 	if got := waitStable(&handled, 400*time.Millisecond, 10*time.Second); got != 1 {
 		t.Fatalf("handled = %d, want 1", got)
+	}
+}
+
+func TestJetStreamCollectorReportsLagAndDLQ(t *testing.T) {
+	nc := startJetStream(t)
+	cfg := testNATSConfig("WEBHOOK_EVENTS")
+	js, _ := nc.JetStream()
+	if err := EnsureStream(js, WebhookStreamSpec(cfg), quietLog()); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := js.AddConsumer("WEBHOOK_EVENTS", &nats.ConsumerConfig{Durable: "backend-meta", FilterSubject: "meta.>", AckPolicy: nats.AckExplicitPolicy}); err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 3; i++ {
+		if _, err := js.Publish("meta.message.received", []byte(`{}`)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := js.Publish("meta.consumer.dlq.message", []byte(`{}`)); err != nil {
+		t.Fatal(err)
+	}
+
+	reg := prometheus.NewRegistry()
+	reg.MustRegister(NewJetStreamCollector(js, "WEBHOOK_EVENTS", "backend-meta", "not-created-yet"))
+	families, err := reg.Gather()
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := map[string]float64{}
+	for _, f := range families {
+		for _, m := range f.GetMetric() {
+			key := f.GetName()
+			for _, l := range m.GetLabel() {
+				if l.GetName() == "subject" || l.GetName() == "consumer" {
+					key += "|" + l.GetValue()
+				}
+			}
+			got[key] = m.GetGauge().GetValue()
+		}
+	}
+	// 3 messages + the DLQ message all match the consumer filter meta.>.
+	if got["jetstream_consumer_pending_messages|backend-meta"] != 4 {
+		t.Fatalf("pending = %v, want 4 (%v)", got["jetstream_consumer_pending_messages|backend-meta"], got)
+	}
+	if got["jetstream_dlq_messages|meta.consumer.dlq.message"] != 1 {
+		t.Fatalf("dlq = %v, want 1 (%v)", got["jetstream_dlq_messages|meta.consumer.dlq.message"], got)
+	}
+	if got["jetstream_stream_bytes"] <= 0 {
+		t.Fatalf("jetstream_stream_bytes = %v, want > 0", got["jetstream_stream_bytes"])
+	}
+	if got["jetstream_up"] != 1 {
+		t.Fatalf("jetstream_up = %v", got["jetstream_up"])
+	}
+}
+
+// A message published inside a span reaches the subscriber handler in the same trace.
+func TestTraceContextCrossesNATS(t *testing.T) {
+	observability.SetupTracing(context.Background(), "test", nil)
+	nc := startJetStream(t)
+	cfg := testNATSConfig("WEBHOOK_EVENTS")
+	pub, err := NewPublisher(nc, cfg, quietLog())
+	if err != nil {
+		t.Fatal(err)
+	}
+	sub, err := NewSubscriber(nc, cfg, quietLog())
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := make(chan string, 1)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	if err := sub.Subscribe(ctx, "trace-test", func(hctx context.Context, _ sharedevents.Envelope) error {
+		got <- trace.SpanContextFromContext(hctx).TraceID().String()
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	pctx, span := observability.Tracer().Start(context.Background(), "producer")
+	want := span.SpanContext().TraceID().String()
+	if err := pub.Publish(pctx, "message.received", "test", map[string]string{}, nil); err != nil {
+		t.Fatal(err)
+	}
+	span.End()
+	select {
+	case id := <-got:
+		if id != want {
+			t.Fatalf("consumer trace %s, want producer trace %s", id, want)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("message not consumed")
 	}
 }

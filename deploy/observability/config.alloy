@@ -1,0 +1,38 @@
+// Ship container stdout (JSON logs) of this compose project to Loki.
+discovery.docker "containers" {
+  host = "unix:///var/run/docker.sock"
+}
+
+discovery.relabel "omni" {
+  targets = discovery.docker.containers.targets
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    target_label  = "service"
+  }
+}
+
+loki.source.docker "omni" {
+  host       = "unix:///var/run/docker.sock"
+  targets    = discovery.relabel.omni.output
+  forward_to = [loki.process.json.receiver]
+}
+
+// Promote level and trace_id so logs can be filtered and joined to traces.
+loki.process "json" {
+  stage.json {
+    expressions = { level = "level", trace_id = "trace_id" }
+  }
+  stage.labels {
+    values = { level = "" }
+  }
+  stage.structured_metadata {
+    values = { trace_id = "" }
+  }
+  forward_to = [loki.write.default.receiver]
+}
+
+loki.write "default" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}

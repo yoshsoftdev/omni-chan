@@ -1,0 +1,61 @@
+groups:
+  - name: omni
+    rules:
+      - alert: ServiceDown
+        expr: up{job="omni"} == 0
+        for: 2m
+        labels: { severity: critical }
+        annotations:
+          summary: "{{ $labels.service }} is not reachable by Prometheus"
+
+      - alert: DeadLetterMessages
+        expr: sum by (subject) (jetstream_dlq_messages) > 0
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "{{ $value }} message(s) on dead-letter subject {{ $labels.subject }}"
+
+      - alert: ConsumerLagHigh
+        expr: max by (consumer) (jetstream_consumer_pending_messages) > 1000
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "Consumer {{ $labels.consumer }} is {{ $value }} messages behind"
+
+      - alert: EventBusUnreadable
+        expr: jetstream_up == 0
+        for: 5m
+        labels: { severity: critical }
+        annotations:
+          summary: "JetStream stream {{ $labels.stream }} cannot be read"
+
+      - alert: EventBusStorageHigh
+        expr: jetstream_stream_bytes / jetstream_stream_max_bytes > 0.8
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "Stream {{ $labels.stream }} is {{ $value | humanizePercentage }} full (set NATS_STREAM_MAX_BYTES to enable)"
+
+      - alert: WebhookPublishFailing
+        expr: increase(omni_webhook_publish_failures_total[10m]) > 0
+        labels: { severity: critical }
+        annotations:
+          summary: "Webhook events failed to publish; Meta is being told to retry (503)"
+
+      - alert: HTTP5xxRateHigh
+        expr: |
+          sum by (service) (rate(http_requests_total{status=~"5.."}[5m]))
+            / sum by (service) (rate(http_requests_total[5m])) > 0.05
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "{{ $labels.service }} 5xx ratio is {{ $value | humanizePercentage }}"
+
+      - alert: BroadcastSendFailureRateHigh
+        expr: |
+          rate(omni_broadcast_send_failed_total[15m])
+            / clamp_min(rate(omni_broadcast_send_attempts_total[15m]), 1e-9) > 0.2
+        for: 15m
+        labels: { severity: warning }
+        annotations:
+          summary: "More than 20% of broadcast sends are failing"

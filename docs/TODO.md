@@ -20,13 +20,13 @@ _Terakhir diperbarui: 2026-11-14_
 | 1 | Dokumen | 6 / 7 |
 | 2 | Daftar fitur & triase | 2 / 5 |
 | 3 | Testing & CI | 6 / 6 ✅ |
-| 4 | Monitoring | 0 / 7 |
+| 4 | Monitoring | 6 / 7 |
 | 5 | Design system | 0 / 6 |
 | 6 | Integritas data & pemecahan proses | 0 / 6 |
 | 7 | UI/UX revamp | 0 / 7 |
 | 8 | Migrasi NATS → Kafka | 0 / 7 |
 | 9 | Fitur R3 | 0 / 5 |
-| **Total** | | **23 / 66** |
+| **Total** | | **29 / 66** |
 
 ## Perlu tindakan manual (pemilik repo)
 
@@ -35,6 +35,9 @@ _Terakhir diperbarui: 2026-11-14_
 - [ ] Server deploy (`deploy/`): pastikan Go ≥ 1.26 atau `GOTOOLCHAIN=auto` dengan akses internet
 - [ ] Review PRD oleh product owner (= butir 1.5)
 - [ ] GitHub: buat secret `SUBMODULES_TOKEN` (repo induk) dan `PARENT_REPO_TOKEN` (repo backend/webhook/storage) bila repo private; read-only cukup
+- [ ] Compose kini **mewajibkan** `META_TOKEN_ENCRYPTION_KEY` (base64 32 byte; dulu tidak diteruskan sehingga backend tak bisa start) dan, untuk stack monitoring, `GRAFANA_ADMIN_PASSWORD`
+- [ ] Alertmanager: isi receiver notifikasi (Slack/email/webhook) di `deploy/observability/alertmanager.yml`
+- [ ] Putuskan Sentry (butir 4.4): pakai SaaS, self-host, atau cukup Loki + alert
 - [ ] GitHub: aktifkan branch protection "require status checks" (`ci`) di kelima repo — DoD fase 3
 
 ---
@@ -84,13 +87,13 @@ _Terakhir diperbarui: 2026-11-14_
 
 ## Fase 4 — Monitoring & observability
 
-- [ ] **4.1** Standar log JSON dengan `trace_id`, `team_id`, `event_id`
-- [ ] **4.2** OpenTelemetry tracing (HTTP, Meta, publish/consume, DB)
-- [ ] **4.3** Metrik Prometheus (RED, consumer lag, DLQ, error Meta, throughput broadcast, koneksi WS)
-- [ ] **4.4** Stack Prometheus + Grafana + Loki + Tempo; Sentry FE/BE
-- [ ] **4.5** Dashboard Grafana (ingress, inbox, broadcast, infra)
-- [ ] **4.6** Alert (DLQ, lag, error Meta, heartbeat worker, disk bus)
-- [ ] **4.7** Healthcheck compose + `/health` & `/ready` di semua service
+- [x] **4.1** Log JSON + `trace_id`/`span_id` (slog handler), access log per request dengan `team_id`/`request_id`, log consumer gagal dengan `event_id` — `shared/observability/log.go`, `fiber.go`
+- [x] **4.2** OpenTelemetry: HTTP masuk, client Meta & storage (otelhttp), publish/consume NATS (`traceparent`), query Postgres (otelpgx), publish realtime WS — diverifikasi di Tempo: satu trace webhook → consumer → DB
+- [x] **4.3** Prometheus di port internal tiap proses: RED per route, lag/redelivery/DLQ/ukuran JetStream, kegagalan broadcast per kode, throughput broadcast, cache media, koneksi WS
+- [ ] **4.4** Stack Prometheus + Alertmanager + Grafana + Loki/Alloy + Tempo ✅ (`docker-compose.observability.yml`, diuji end-to-end). **Sisa: Sentry FE/BE — menunggu keputusan** (layanan pihak ketiga, data error keluar dari server)
+- [x] **4.5** 4 dashboard ter-provisioning: Ingress webhook, Inbox realtime, Broadcast, Infra — `deploy/observability/grafana/dashboards`
+- [x] **4.6** 8 alert rule (service down, DLQ, lag, bus tak terbaca, storage bus, publish webhook gagal, 5xx, gagal kirim broadcast) — lolos promtool; receiver notifikasi perlu diisi (manual)
+- [x] **4.7** `/health` & `/ready` di port internal semua proses; healthcheck + `depends_on: service_healthy` di compose
 
 ## Fase 5 — Design system
 

@@ -1,0 +1,163 @@
+{
+ "uid": "omni-inbox",
+ "title": "Inbox realtime",
+ "schemaVersion": 39,
+ "time": {
+  "from": "now-6h",
+  "to": "now"
+ },
+ "refresh": "30s",
+ "tags": [
+  "omni"
+ ],
+ "panels": [
+  {
+   "type": "timeseries",
+   "title": "Consumer lag",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 0,
+    "w": 12,
+    "h": 8
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short"
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "max by (consumer) (jetstream_consumer_pending_messages)",
+     "legendFormat": "pending {{consumer}}"
+    },
+    {
+     "refId": "B",
+     "expr": "max by (consumer) (jetstream_consumer_ack_pending_messages)",
+     "legendFormat": "ack pending {{consumer}}"
+    }
+   ],
+   "id": 1
+  },
+  {
+   "type": "timeseries",
+   "title": "Events processed / failed",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 12,
+    "y": 0,
+    "w": 12,
+    "h": 8
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "ops"
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "rate(omni_consumer_events_total[5m])",
+     "legendFormat": "events"
+    },
+    {
+     "refId": "B",
+     "expr": "rate(omni_consumer_failures_total[5m])",
+     "legendFormat": "failures"
+    },
+    {
+     "refId": "C",
+     "expr": "rate(omni_consumer_dlq_total[5m])",
+     "legendFormat": "dlq"
+    }
+   ],
+   "id": 2
+  },
+  {
+   "type": "timeseries",
+   "title": "WebSocket connections",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 8,
+    "w": 12,
+    "h": 8
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short"
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum(omni_websocket_connections)",
+     "legendFormat": "connections"
+    }
+   ],
+   "id": 3
+  },
+  {
+   "type": "timeseries",
+   "title": "API p95 latency by route",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 12,
+    "y": 8,
+    "w": 12,
+    "h": 8
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "s"
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "histogram_quantile(0.95, sum by (le, route) (rate(http_request_duration_seconds_bucket{service=\"backend-api\"}[5m])))",
+     "legendFormat": "{{route}}"
+    }
+   ],
+   "id": 4
+  },
+  {
+   "type": "logs",
+   "title": "Backend errors",
+   "datasource": {
+    "type": "loki",
+    "uid": "loki"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 16,
+    "w": 24,
+    "h": 10
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "{service=\"backend-service\", level=\"ERROR\"}"
+    }
+   ],
+   "id": 5
+  }
+ ]
+}

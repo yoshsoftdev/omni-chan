@@ -94,14 +94,18 @@ Ukuran: **S** ≤ 2 hari, **M** ≤ 1 minggu, **L** > 1 minggu.
 
 ## Fase 4 — Monitoring & observability (M)
 
-- [ ] 4.1 Standar log: JSON `slog` dengan `trace_id`, `team_id`, `event_id` di semua service
-- [ ] 4.2 OpenTelemetry tracing: HTTP masuk, panggilan Meta, publish/consume event (propagasi `traceparent` di header event), query DB
-- [ ] 4.3 Metrik Prometheus: RED per endpoint, consumer lag & redelivery, ukuran DLQ, error rate Meta per kode, throughput broadcast, koneksi WS aktif
-- [ ] 4.4 Stack: Prometheus + Grafana + Loki (log) + Tempo (trace) di docker-compose/deploy; Sentry untuk FE & BE
-- [ ] 4.5 Dashboard Grafana: *Ingress webhook*, *Inbox realtime*, *Broadcast*, *Infra (PG/Redis/bus)*
-- [ ] 4.6 Alert: DLQ > 0, consumer lag > X, error rate Meta > Y%, worker tidak heartbeat, disk bus > 80%
-- [ ] 4.7 Healthcheck compose (`depends_on: condition: service_healthy`) + endpoint `/health` & `/ready` di semua service
-- DoD fase: satu pesan masuk bisa ditelusuri end-to-end di Tempo dari webhook sampai WS.
+- [x] 4.1 Standar log: JSON `slog` dengan `trace_id`, `team_id`, `event_id` di semua service
+- [x] 4.2 OpenTelemetry tracing: HTTP masuk, panggilan Meta, publish/consume event (propagasi `traceparent` di header event), query DB
+- [x] 4.3 Metrik Prometheus: RED per endpoint, consumer lag & redelivery, ukuran DLQ, error rate Meta per kode, throughput broadcast, koneksi WS aktif
+- [ ] 4.4 Stack: Prometheus + Grafana + Loki (log) + Tempo (trace) di docker-compose/deploy ✅; **Sentry untuk FE & BE — belum, menunggu keputusan**
+- [x] 4.5 Dashboard Grafana: *Ingress webhook*, *Inbox realtime*, *Broadcast*, *Infra (PG/Redis/bus)*
+- [x] 4.6 Alert: DLQ > 0, consumer lag > X, error rate Meta > Y%, worker tidak heartbeat, disk bus > 80%
+- [x] 4.7 Healthcheck compose (`depends_on: condition: service_healthy`) + endpoint `/health` & `/ready` di semua service
+- DoD fase: satu pesan masuk bisa ditelusuri end-to-end di Tempo dari webhook sampai WS. ✅ Diverifikasi pada stack nyata: trace `POST /api/v1/webhooks/meta` → `consume meta.message.received` → query Postgres, log consumer di Loki membawa `trace_id` yang sama; span `realtime publish` menutup hop WS.
+- Temuan & perbaikan selama fase 4:
+  - `docker-compose.yml` tidak meneruskan `META_TOKEN_ENCRYPTION_KEY` → backend **tidak bisa start** di compose. Kini variabel wajib.
+  - Migrasi storage-service mereferensikan tabel `teams` milik backend → di database baru storage gagal start. Urutan startup kini storage menunggu backend sehat.
+  - Header `traceparent` dari fasthttp ber-case kanonik (`Traceparent`) → trace masuk tidak tersambung. Carrier kini case-insensitive.
 
 ## Fase 5 — Design system / "design fix" (M)
 

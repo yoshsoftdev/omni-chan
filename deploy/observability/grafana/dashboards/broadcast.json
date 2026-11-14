@@ -1,0 +1,157 @@
+{
+ "uid": "omni-broadcast",
+ "title": "Broadcast",
+ "schemaVersion": 39,
+ "time": {
+  "from": "now-6h",
+  "to": "now"
+ },
+ "refresh": "30s",
+ "tags": [
+  "omni"
+ ],
+ "panels": [
+  {
+   "type": "timeseries",
+   "title": "Sends",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 0,
+    "w": 12,
+    "h": 8
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "ops"
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "rate(omni_broadcast_send_attempts_total[5m])",
+     "legendFormat": "attempts"
+    },
+    {
+     "refId": "B",
+     "expr": "rate(omni_broadcast_send_success_total[5m])",
+     "legendFormat": "success"
+    },
+    {
+     "refId": "C",
+     "expr": "rate(omni_broadcast_send_failed_total[5m])",
+     "legendFormat": "failed"
+    },
+    {
+     "refId": "D",
+     "expr": "rate(omni_broadcast_meta_rate_limit_total[5m])",
+     "legendFormat": "rate limited"
+    }
+   ],
+   "id": 1
+  },
+  {
+   "type": "timeseries",
+   "title": "Batches in progress",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 12,
+    "y": 0,
+    "w": 12,
+    "h": 8
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short"
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "omni_broadcast_worker_batches_processing",
+     "legendFormat": "processing"
+    }
+   ],
+   "id": 2
+  },
+  {
+   "type": "timeseries",
+   "title": "Delivery status updates",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 0,
+    "y": 8,
+    "w": 12,
+    "h": 8
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "ops"
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "rate(omni_campaign_status_updates_total[5m])",
+     "legendFormat": "status updates"
+    },
+    {
+     "refId": "B",
+     "expr": "rate(omni_recipient_failures_total[5m])",
+     "legendFormat": "recipient failures"
+    }
+   ],
+   "id": 3
+  },
+  {
+   "type": "timeseries",
+   "title": "Media cache",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "gridPos": {
+    "x": 12,
+    "y": 8,
+    "w": 12,
+    "h": 8
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "ops"
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "rate(omni_media_cache_hit_total[5m])",
+     "legendFormat": "hit"
+    },
+    {
+     "refId": "B",
+     "expr": "rate(omni_media_cache_miss_total[5m])",
+     "legendFormat": "miss"
+    },
+    {
+     "refId": "C",
+     "expr": "rate(omni_media_upload_failure_total[5m])",
+     "legendFormat": "upload failed"
+    }
+   ],
+   "id": 4
+  }
+ ]
+}

@@ -87,13 +87,16 @@ func (s *Subscriber) handleMessage(ctx context.Context, msg *nats.Msg, handler H
 		return
 	}
 
+	ctx, span := ConsumerSpan(ctx, msg)
+	defer span.End()
 	if err := handler(ctx, envelope); err != nil {
+		span.RecordError(err)
 		delivered, terminated := s.policy.retryOrTerm(msg)
 		if terminated {
-			s.log.Error("handler terminal failure", "type", envelope.Type, "event_id", envelope.ID, "attempt", delivered, "error", err)
+			s.log.ErrorContext(ctx, "handler terminal failure", "type", envelope.Type, "event_id", envelope.ID, "attempt", delivered, "error", err)
 			return
 		}
-		s.log.Warn("handler retry", "type", envelope.Type, "event_id", envelope.ID, "attempt", delivered, "error", err)
+		s.log.WarnContext(ctx, "handler retry", "type", envelope.Type, "event_id", envelope.ID, "attempt", delivered, "error", err)
 		return
 	}
 	_ = msg.Ack()

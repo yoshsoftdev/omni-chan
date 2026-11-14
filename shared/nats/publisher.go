@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/omnichannel/omni-chan-v2/shared/observability"
 	"log/slog"
 	"time"
 
@@ -63,6 +64,7 @@ func (p *Publisher) Publish(ctx context.Context, eventType, source string, paylo
 	if p.internalToken != "" {
 		msg.Header.Set("X-Internal-Token", p.internalToken)
 	}
+	observability.Inject(ctx, msg.Header)
 	// Server-side dedup: a retry of a publish that actually landed is dropped.
 	msg.Header.Set(nats.MsgIdHdr, envelope.ID)
 

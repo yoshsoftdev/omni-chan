@@ -1,0 +1,8 @@
+# Alerts are visible in Alertmanager/Grafana by default. To be notified, replace
+# the "default" receiver with a real one (Slack, email, webhook) and keep secrets
+# in env-substituted files, not in this repo.
+route:
+  receiver: default
+  group_by: [alertname, service]
+receivers:
+  - name: default

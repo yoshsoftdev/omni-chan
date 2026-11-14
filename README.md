@@ -95,6 +95,14 @@ make test-all        # ketiganya
 
 CI: `.github/workflows/ci.yml` di repo ini dan di tiap submodule (butuh secret `SUBMODULES_TOKEN` / `PARENT_REPO_TOKEN` bila repo private).
 
+## Monitoring (opsional)
+
+```bash
+GRAFANA_ADMIN_PASSWORD=... docker compose -f docker-compose.yml -f docker-compose.observability.yml up -d
+```
+
+Grafana di `http://127.0.0.1:3001` (folder **Omni Chan**: Ingress webhook, Inbox realtime, Broadcast, Infra). Tiap proses juga punya `/metrics`, `/health`, `/ready` di port internal `METRICS_ADDR` (default `127.0.0.1:9101` api, `9102` worker, `9103` orchestrator, `9104` webhook, `9105` storage) yang tidak pernah dipublikasikan. Trace diekspor bila `OTEL_EXPORTER_OTLP_ENDPOINT` diisi.
+
 ## Structure
 
 ```

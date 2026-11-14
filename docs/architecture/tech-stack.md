@@ -33,7 +33,7 @@
 | Excel import | excelize | 2.11.1 |
 | Object storage client | minio-go (hanya di storage-service) | 7.0 |
 | Logging | `log/slog` | stdlib |
-| Metrik | Counter atomik in-process, diekspos sebagai JSON | custom |
+| Metrik | Prometheus client_golang (counter in-process dibaca saat scrape) | 1.25 |
 
 ### Infrastruktur
 | Komponen | Versi | Dipakai untuk |
@@ -66,7 +66,7 @@
 | Integration / e2e test | Postgres (`-tags=integration`), JetStream embedded, ingress webhook end-to-end; Playwright 9 test untuk 5 alur utama |
 | CI | GitHub Actions di 5 repo (vet, golangci-lint only-new, race test, coverage gate, integration Postgres, lint, tsc, build, e2e) |
 | Coverage report | Gate di CI (Go `cover`, vitest `thresholds`) |
-| Monitoring / alert | Tidak ada (tidak ada Prometheus, tracing, atau error tracking) |
+| Monitoring / alert | `/metrics` `/health` `/ready` internal per proses; OpenTelemetry → Tempo; log JSON → Loki (Alloy); Prometheus + 8 alert; Grafana 4 dashboard (opt-in `docker-compose.observability.yml`). Error tracking (Sentry) belum |
 
 ## 3. Penilaian
 

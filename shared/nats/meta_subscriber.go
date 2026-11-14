@@ -100,13 +100,16 @@ func (s *MetaSubscriber) handleMessage(ctx context.Context, msg *nats.Msg, handl
 		return
 	}
 
+	ctx, span := ConsumerSpan(ctx, msg)
+	defer span.End()
 	if err := handler(ctx, event); err != nil {
+		span.RecordError(err)
 		delivered, terminated := s.policy.retryOrTerm(msg)
 		if terminated {
-			s.log.Error("meta handler terminal failure", "type", event.Type, "event_id", event.EventID, "attempt", delivered, "error", err)
+			s.log.ErrorContext(ctx, "meta handler terminal failure", "type", event.Type, "event_id", event.EventID, "attempt", delivered, "error", err)
 			return
 		}
-		s.log.Warn("meta handler retry", "type", event.Type, "event_id", event.EventID, "attempt", delivered, "error", err)
+		s.log.WarnContext(ctx, "meta handler retry", "type", event.Type, "event_id", event.EventID, "attempt", delivered, "error", err)
 		return
 	}
 	_ = msg.Ack()
