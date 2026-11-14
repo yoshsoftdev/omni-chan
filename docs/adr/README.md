@@ -15,6 +15,7 @@ Implementation must conform to accepted ADRs. An ADR explains architectural inte
 - [ADR 0005: Conversation Ownership](0005-conversation-model.md)
 - [ADR 0006: Canonical Message](0006-canonical-message.md)
 - [ADR 0007: Provider Abstraction](0007-provider-abstraction.md)
+- [ADR 0008: Message wamid dedup in the database](0008-message-wamid-dedup.md)
 
 ## ADR Numbering
 

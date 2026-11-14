@@ -157,7 +157,7 @@ Pola **transactional outbox** sudah dipakai di jalur ini. Pertahankan pola ini s
 | D4 ✅ | Token internal salah → `Nak` tanpa batas (diperbaiki: dibatasi lalu `Term`) | `shared/nats/subscriber.go` | Redelivery tak berujung | 0 |
 | D5 ✅ | `ensureStream` tidak update config / error sementara dianggap stream hilang (diperbaiki: `EnsureStream`) | `publisher/nats.go` | Perubahan konfigurasi tidak pernah diterapkan | 0 |
 | D6 ✅ | Tidak ada `Nats-Msg-Id` (diperbaiki) | publisher | Dedup server-side JetStream tidak aktif | 0 |
-| D7 | Partisi hanya DEFAULT; unique `(wamid, created_at)` tidak mencegah wamid ganda | migrasi `000015`, `000012` | Dedup bergantung pada check-then-insert + Redis 24 jam | 6 |
+| D7 ✅ | Partisi hanya DEFAULT; unique `(wamid, created_at)` tidak mencegah wamid ganda (diperbaiki: `message_wamids`, ADR 0008) | migrasi `000015`, `000012` | Dedup bergantung pada check-then-insert + Redis 24 jam | 6 |
 | D8 | Idempotensi fallback ke memory bila Redis tak dikonfigurasi | `cmd/api/main.go` | Duplikat setelah restart / antar replika | 6 |
 | D9 | Fanout WS via Redis pub/sub bersifat at-most-once | `websocket/hub` | Event hilang saat reconnect; klien harus resync delta | 6 |
 | D10 | Dua jalur consumer paralel (`events.>` legacy + `meta.>`) | `cmd/api/main.go` | Kompleksitas, potensi proses dobel | 6 |
