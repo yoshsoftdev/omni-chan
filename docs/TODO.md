@@ -16,7 +16,7 @@ _Terakhir diperbarui: 2026-11-14_
 | Fase | Topik | Selesai |
 |---|---|---|
 | T | Tooling & baseline | 3 / 3 ✅ |
-| 0 | Stabilisasi darurat | 6 / 7 |
+| 0 | Stabilisasi darurat | 7 / 7 |
 | 1 | Dokumen | 6 / 7 |
 | 2 | Daftar fitur & triase | 2 / 5 |
 | 3 | Testing & CI | 6 / 6 ✅ |
@@ -26,11 +26,11 @@ _Terakhir diperbarui: 2026-11-14_
 | 7 | UI/UX revamp | 0 / 7 |
 | 8 | Migrasi NATS → Kafka | 0 / 7 |
 | 9 | Fitur R3 | 0 / 5 |
-| **Total** | | **35 / 66** |
+| **Total** | | **36 / 66** |
 
 ## Perlu tindakan manual (pemilik repo)
 
-- [ ] Revoke & rotasi automation API key yang bocor di commit `e9d1e1b` (= butir 0.1)
+- [x] Revoke & rotasi automation API key prefix `oc_auto_9221` (= butir 0.1) — server `nasi` beserta DB-nya sudah dihapus (2026-11-15)
 - [x] Push branch: submodule dulu (`frontend@yos`, `backend-service@yos`, `webhook-service@stag`, `storage-service@chore/phase0-hardening`), lalu induk `chore/phase0-hardening`
 - [ ] Server deploy (`deploy/`): pastikan Go ≥ 1.26 atau `GOTOOLCHAIN=auto` dengan akses internet
 - [ ] Review PRD oleh product owner (= butir 1.5)
@@ -50,7 +50,10 @@ _Terakhir diperbarui: 2026-11-14_
 
 ## Fase 0 — Stabilisasi darurat
 
-- [ ] **0.1** Rotasi automation API key (manual) — file sudah di-redact
+- [x] **0.1** Rotasi automation API key — selesai dengan dihapusnya server `nasi` (2026-11-15). Key ber-prefix `oc_auto_9221` hanya berlaku di DB server itu.
+  - Key **tidak pernah ada di commit yang ter-push**. Key hanya ada di 2 blob lokal tanpa referensi, dan `docs/bugs/campaign-broadcast-bugs.md` sudah di-redact.
+  - **Jangan restore dump DB `nasi`** ke staging/VM baru. Kalau terlanjur, rotate key `oc_auto_9221` di sana.
+  - Dev lokal kini memakai container `omni-chan-postgres` (127.0.0.1:5432, DB `omni_chan_dev`, migrasi 52).
 - [x] **0.2** Window recontact anti-dobel: diverifikasi + test 16 replika — `backend@468a7b4`
 - [x] **0.3** Hardening JetStream + perbaikan kehilangan pesan saat NATS mati — induk `efe1b18`, `webhook@f58848d`, `backend@468a7b4`
 - [x] **0.4** `/api/v1/metrics` webhook wajib token internal — `webhook@f58848d`
