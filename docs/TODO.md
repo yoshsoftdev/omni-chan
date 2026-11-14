@@ -21,12 +21,12 @@ _Terakhir diperbarui: 2026-11-14_
 | 2 | Daftar fitur & triase | 2 / 5 |
 | 3 | Testing & CI | 6 / 6 ✅ |
 | 4 | Monitoring | 6 / 7 |
-| 5 | Design system | 2 / 6 |
+| 5 | Design system | 6 / 6 |
 | 6 | Integritas data & pemecahan proses | 0 / 6 |
 | 7 | UI/UX revamp | 0 / 7 |
 | 8 | Migrasi NATS → Kafka | 0 / 7 |
 | 9 | Fitur R3 | 0 / 5 |
-| **Total** | | **31 / 66** |
+| **Total** | | **35 / 66** |
 
 ## Perlu tindakan manual (pemilik repo)
 
@@ -99,10 +99,10 @@ _Terakhir diperbarui: 2026-11-14_
 
 - [x] **5.1** Audit UI semua route (46 halaman; empty/error/loading) — `design/ui-audit.md`
 - [x] **5.2** Design token: token `globals.css`/Tailwind dipakai di seluruh UI (hex, palet mentah, `bg-white`, font 10–11 px → token; dark mode Window Recontact/inbox ikut benar) — `frontend` (lihat `design/ui-audit.md`)
-- [ ] **5.3** Pustaka komponen shadcn/ui
-- [ ] **5.4** Pola layout (AppShell, PageHeader, FilterBar, DetailPanel, Wizard)
-- [ ] **5.5** Storybook + visual regression
-- [ ] **5.6** Dokumen `docs/design/design-system.md`
+- [x] **5.3** Pustaka komponen shadcn/ui (Radix): Dialog, Sheet, Select, Tabs, DropdownMenu, Tooltip, Skeleton, Button `destructive`; + DataTable/Pagination/StatusBadge/EmptyState/ErrorState/Toast yang ada; lint DoD (`eslint.legacy-ui.mjs` hanya menyusut) — `frontend`
+- [x] **5.4** Pola layout: `RouteTabs` menyatukan 4 nav section, `DetailPanel` (Sheet), StepWizard semantik, AppShell tanpa data palsu (badge "2", role "Admin") — `frontend`
+- [x] **5.5** Storybook 10 (nextjs-vite) + visual regression Playwright, 16 story × light/dark, toleransi 0 px, baseline dari image Docker Playwright; job CI `visual` — `frontend`
+- [x] **5.6** Dokumen `design/design-system.md`
 
 ## Fase 6 — Integritas data & pemecahan proses
 

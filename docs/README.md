@@ -44,7 +44,7 @@ docs/
 | Arsitektur | [Overview](architecture/overview.md) · [Tech stack](architecture/tech-stack.md) · [Alur data](architecture/data-flow.md) |
 | Kontrak | [API v1](architecture/api-v1-contract.md) · [OpenAPI](openapi/v1.yaml) · [Skema DB](architecture/database-schema-v1.md) |
 | Keputusan | [ADR index](adr/README.md) |
-| Desain UI | [Audit UI](design/ui-audit.md) |
+| Desain UI | [Design system](design/design-system.md) · [Audit UI](design/ui-audit.md) |
 | Event | [Envelope](domain/events/event-envelope.md) · [Subjects](domain/events/nats-subjects.md) · [Idempotensi](domain/events/idempotency-strategy.md) · [DLQ](domain/events/dead-letter-strategy.md) · [Tenant resolution](domain/events/tenant-resolution.md) |
 | Broadcast | [Execution architecture](domain/broadcast/execution-architecture.md) · [Failure classification](domain/broadcast/failure-classification.md) · [Reconciliation](domain/broadcast/reconciliation.md) · [Runbook recovery](runbooks/broadcast-recovery.md) |
 | Inbox | [Assignment](domain/inbox/assignment-rules.md) · [Lifecycle](domain/inbox/conversation-lifecycle.md) · [SLA](domain/inbox/sla-tracking.md) |
