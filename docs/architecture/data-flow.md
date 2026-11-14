@@ -160,7 +160,7 @@ Pola **transactional outbox** sudah dipakai di jalur ini. Pertahankan pola ini s
 | D7 ✅ | Partisi hanya DEFAULT; unique `(wamid, created_at)` tidak mencegah wamid ganda (diperbaiki: `message_wamids`, ADR 0008) | migrasi `000015`, `000012` | Dedup bergantung pada check-then-insert + Redis 24 jam | 6 |
 | D8 ✅ | Idempotensi fallback ke memory bila Redis tak dikonfigurasi (diperbaiki: `processed_events` di Postgres + Redis cache) | `cmd/api/main.go` | Duplikat setelah restart / antar replika | 6 |
 | D9 | Fanout WS via Redis pub/sub bersifat at-most-once | `websocket/hub` | Event hilang saat reconnect; klien harus resync delta | 6 |
-| D10 | Dua jalur consumer paralel (`events.>` legacy + `meta.>`) | `cmd/api/main.go` | Kompleksitas, potensi proses dobel | 6 |
+| D10 ✅ | Dua jalur consumer paralel (`events.>` legacy + `meta.>`) (diperbaiki: jalur legacy dihapus, 6.4) | `cmd/api/main.go` | Kompleksitas, potensi proses dobel | 6 |
 | D11 ✅ | `/api/v1/metrics` terbuka di service publik (diperbaiki: wajib token internal) | `webhook-service/cmd/main.go` | Kebocoran info operasional | 0 |
 | D13 ✅ | Webhook di-ACK 200 + kunci idempotensi tetap tertanda walau publish gagal → pesan hilang (diperbaiki: lepas kunci + 503) | `webhook-service/internal/processor` | Tinggi | 0 |
 | D14 ✅ | Error DB saat resolve tenant dianggap terminal → event masuk DLQ tanpa retry | `eventconsumer/resolver` | Tinggi | 3 |

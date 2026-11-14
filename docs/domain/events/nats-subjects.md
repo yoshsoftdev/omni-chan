@@ -1,7 +1,9 @@
 # NATS Subject Design
 
 JetStream stream: `WEBHOOK_EVENTS`  
-Subjects: `events.>` (legacy), `meta.>` (Phase 11.3+)
+Subjects: `meta.>`. The stream still lists `events.>` so existing streams reconcile cleanly, but nothing publishes or consumes it since 6.4 (2026-11-15).
+
+> **Cleanup after deploying 6.4:** delete the orphaned durable consumer once: `nats consumer rm WEBHOOK_EVENTS <NATS_CONSUMER_NAME>-legacy`. Check it has no pending messages first: `nats consumer info …`.
 
 ## Meta Subjects
 

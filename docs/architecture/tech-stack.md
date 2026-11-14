@@ -40,7 +40,7 @@
 |---|---|---|
 | PostgreSQL | 16 | Data utama. Tabel `messages`, `campaign_recipients`, `contact_import_rows` di-partisi `RANGE(created_at)`, tapi **hanya ada partisi DEFAULT** |
 | Redis | 7 | Pub/sub fanout WebSocket, idempotensi consumer, rate limiter worker, flag pembatalan broadcast, worker registry, collision detection |
-| NATS JetStream | 2.10 | Stream `WEBHOOK_EVENTS` (`events.>` legacy, `meta.>`) dan stream broadcast (`broadcast.*`, MaxAge 7 hari) |
+| NATS JetStream | 2.10 | Stream `WEBHOOK_EVENTS` (`meta.>`; `events.>` tidak dipakai sejak 6.4) dan stream broadcast (`broadcast.*`, MaxAge 7 hari) |
 | Object storage | local disk (default) / MinIO | File media |
 | Deploy | docker-compose, systemd + nginx (`deploy/`) | – |
 
