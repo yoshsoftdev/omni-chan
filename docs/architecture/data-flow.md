@@ -165,7 +165,7 @@ Pola **transactional outbox** sudah dipakai di jalur ini. Pertahankan pola ini s
 | D6 ✅ | Tidak ada `Nats-Msg-Id` (diperbaiki) | publisher | Dedup server-side JetStream tidak aktif | 0 |
 | D7 ✅ | Partisi hanya DEFAULT; unique `(wamid, created_at)` tidak mencegah wamid ganda (diperbaiki: `message_wamids`, ADR 0008) | migrasi `000015`, `000012` | Dedup bergantung pada check-then-insert + Redis 24 jam | 6 |
 | D8 ✅ | Idempotensi fallback ke memory bila Redis tak dikonfigurasi (diperbaiki: `processed_events` di Postgres + Redis cache) | `internal/app/app.go` | Duplikat setelah restart / antar replika | 6 |
-| D9 | Fanout WS via Redis pub/sub bersifat at-most-once | `websocket/hub` | Event hilang saat reconnect; klien harus resync delta | 6 |
+| D9 ✅ | Fanout WS via Redis pub/sub bersifat at-most-once (diperbaiki: klien refetch state yang tampil saat reconnect, 6.5) | `websocket/hub` | Event hilang saat reconnect; klien harus resync delta | 6 |
 | D10 ✅ | Dua jalur consumer paralel (`events.>` legacy + `meta.>`) (diperbaiki: jalur legacy dihapus, 6.4) | `internal/app/app.go` | Kompleksitas, potensi proses dobel | 6 |
 | D11 ✅ | `/api/v1/metrics` terbuka di service publik (diperbaiki: wajib token internal) | `webhook-service/cmd/main.go` | Kebocoran info operasional | 0 |
 | D13 ✅ | Webhook di-ACK 200 + kunci idempotensi tetap tertanda walau publish gagal → pesan hilang (diperbaiki: lepas kunci + 503) | `webhook-service/internal/processor` | Tinggi | 0 |

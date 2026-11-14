@@ -22,11 +22,11 @@ _Terakhir diperbarui: 2026-11-14_
 | 3 | Testing & CI | 6 / 6 ✅ |
 | 4 | Monitoring | 6 / 7 |
 | 5 | Design system | 6 / 6 |
-| 6 | Integritas data & pemecahan proses | 4 / 6 |
+| 6 | Integritas data & pemecahan proses | 5 / 6 |
 | 7 | UI/UX revamp | 0 / 7 |
 | 8 | Migrasi NATS → Kafka | 0 / 7 |
 | 9 | Fitur R3 | 0 / 5 |
-| **Total** | | **40 / 66** |
+| **Total** | | **41 / 66** |
 
 ## Perlu tindakan manual (pemilik repo)
 
@@ -113,7 +113,7 @@ _Terakhir diperbarui: 2026-11-14_
 - [x] **6.2** Idempotensi consumer di Postgres (`processed_events`, migrasi `000054`) dengan Redis sebagai cache (`CachedStore`); tak ada lagi fallback memori; purge per jam > MaxAge stream (8 hari). Redis sudah fail-fast saat startup — `backend`
 - [x] **6.3** Backend dipecah jadi `cmd/api` (HTTP+WS), `cmd/event-consumer`, `cmd/scheduler` di atas `internal/app.Run(role)`; job scheduler dijaga advisory lock Postgres (`pkg/leader`, test 2 replika); consumer exit bila NATS tak ada. Compose, unit systemd, skrip install, Dockerfile, Makefile (`run-all`), dan scrape Prometheus (9106/9107) ikut diperbarui — `backend`
 - [x] **6.4** Subscriber legacy `events.>` dihapus: tidak ada publisher sejak 11.3. Ikut dihapus `LegacyConsumer`, pub/sub legacy di `shared/nats`, `Envelope`/`Subject`, dan webhook handler onboarding yang mati (±500 baris). Test tracing dipindah ke jalur `meta.>`. Pembersihan consumer durable `-legacy` di server: lihat `domain/events/nats-subjects.md` — `backend`, `shared`
-- [ ] **6.5** WS resync dengan cursor saat reconnect
+- [x] **6.5** WS resync: saat socket tersambung lagi, klien me-refetch state yang tampil (semua query aktif, plus thread/aktivitas/catatan inbox). Ini menggantikan cursor `created_at`, yang tidak menangkap perubahan status pesan. Unit test reconnect + e2e "pesan saat offline muncul setelah reconnect" — `frontend`
 - [ ] **6.6** `sqlc` + client TS dari OpenAPI
 
 ## Fase 7 — UI/UX revamp
