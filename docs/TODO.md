@@ -21,17 +21,17 @@ _Terakhir diperbarui: 2026-11-14_
 | 2 | Daftar fitur & triase | 2 / 5 |
 | 3 | Testing & CI | 6 / 6 ✅ |
 | 4 | Monitoring | 6 / 7 |
-| 5 | Design system | 0 / 6 |
+| 5 | Design system | 1 / 6 |
 | 6 | Integritas data & pemecahan proses | 0 / 6 |
 | 7 | UI/UX revamp | 0 / 7 |
 | 8 | Migrasi NATS → Kafka | 0 / 7 |
 | 9 | Fitur R3 | 0 / 5 |
-| **Total** | | **29 / 66** |
+| **Total** | | **30 / 66** |
 
 ## Perlu tindakan manual (pemilik repo)
 
 - [ ] Revoke & rotasi automation API key yang bocor di commit `e9d1e1b` (= butir 0.1)
-- [ ] Push branch: submodule dulu (`frontend@yos`, `backend-service@yos`, `webhook-service@stag`, `storage-service@chore/phase0-hardening`), lalu induk `chore/phase0-hardening`
+- [x] Push branch: submodule dulu (`frontend@yos`, `backend-service@yos`, `webhook-service@stag`, `storage-service@chore/phase0-hardening`), lalu induk `chore/phase0-hardening`
 - [ ] Server deploy (`deploy/`): pastikan Go ≥ 1.26 atau `GOTOOLCHAIN=auto` dengan akses internet
 - [ ] Review PRD oleh product owner (= butir 1.5)
 - [ ] GitHub: buat secret `SUBMODULES_TOKEN` (repo induk) dan `PARENT_REPO_TOKEN` (repo backend/webhook/storage) bila repo private; read-only cukup
@@ -97,7 +97,7 @@ _Terakhir diperbarui: 2026-11-14_
 
 ## Fase 5 — Design system
 
-- [ ] **5.1** Audit UI semua route (±45 halaman)
+- [x] **5.1** Audit UI semua route (46 halaman; empty/error/loading) — `design/ui-audit.md`
 - [ ] **5.2** Design token dari `ui-design.mdc` → CSS variables + Tailwind
 - [ ] **5.3** Pustaka komponen shadcn/ui
 - [ ] **5.4** Pola layout (AppShell, PageHeader, FilterBar, DetailPanel, Wizard)
