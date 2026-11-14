@@ -22,11 +22,11 @@ _Terakhir diperbarui: 2026-11-14_
 | 3 | Testing & CI | 6 / 6 ✅ |
 | 4 | Monitoring | 6 / 7 |
 | 5 | Design system | 6 / 6 |
-| 6 | Integritas data & pemecahan proses | 1 / 6 |
+| 6 | Integritas data & pemecahan proses | 2 / 6 |
 | 7 | UI/UX revamp | 0 / 7 |
 | 8 | Migrasi NATS → Kafka | 0 / 7 |
 | 9 | Fitur R3 | 0 / 5 |
-| **Total** | | **37 / 66** |
+| **Total** | | **38 / 66** |
 
 ## Perlu tindakan manual (pemilik repo)
 
@@ -110,7 +110,7 @@ _Terakhir diperbarui: 2026-11-14_
 ## Fase 6 — Integritas data & pemecahan proses
 
 - [x] **6.1** Dedup wamid di DB: tabel klaim `message_wamids(team_id, wamid)` dalam transaksi insert (migrasi `000053`), tanpa pg_partman — [ADR 0008](adr/0008-message-wamid-dedup.md); integration test 16 insert paralel → 1 baris — `backend`
-- [ ] **6.2** Idempotensi consumer berbasis DB; Redis jadi cache
+- [x] **6.2** Idempotensi consumer di Postgres (`processed_events`, migrasi `000054`) dengan Redis sebagai cache (`CachedStore`); tak ada lagi fallback memori; purge per jam > MaxAge stream (8 hari). Redis sudah fail-fast saat startup — `backend`
 - [ ] **6.3** Pecah `cmd/api` → `api`, `event-consumer`, `scheduler`
 - [ ] **6.4** Matikan subscriber legacy `events.>`
 - [ ] **6.5** WS resync dengan cursor saat reconnect
