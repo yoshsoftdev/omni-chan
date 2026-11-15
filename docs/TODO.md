@@ -9,7 +9,7 @@ Pelacak progres tunggal. Detail, alasan, dan Definition of Done setiap butir ada
 3. Tulis bukti di kolom akhir: hash commit, file, atau PR.
 4. Bila butir di sini berubah, ubah juga di `improvement-plan.md` dalam PR yang sama.
 
-_Terakhir diperbarui: 2026-11-14_
+_Terakhir diperbarui: 2026-11-16_
 
 ## Ringkasan
 
@@ -23,10 +23,10 @@ _Terakhir diperbarui: 2026-11-14_
 | 4 | Monitoring | 6 / 7 |
 | 5 | Design system | 6 / 6 |
 | 6 | Integritas data & pemecahan proses | 6 / 6 |
-| 7 | UI/UX revamp | 0 / 7 |
+| 7 | UI/UX revamp | 1 / 7 |
 | 8 | Migrasi NATS → Kafka | 0 / 7 |
 | 9 | Fitur R3 | 0 / 5 |
-| **Total** | | **42 / 66** |
+| **Total** | | **43 / 66** |
 
 ## Perlu tindakan manual (pemilik repo)
 
@@ -121,7 +121,15 @@ _Terakhir diperbarui: 2026-11-14_
 
 ## Fase 7 — UI/UX revamp
 
-- [ ] **7.1** Inbox
+- [x] **7.1** Inbox — `frontend@284391f`
+  - Komponen dipecah: `inbox-page.tsx` 755 → ±470 baris; state thread (pesan, aktivitas, catatan, kirim/retry/hapus, event realtime) pindah ke `hooks/use-conversation-thread.ts`, shortcut ke `hooks/use-inbox-shortcuts.ts`. `send-message-form.tsx` (tak dipakai) dihapus.
+  - Shortcut: `j`/`k` percakapan berikut/sebelumnya (mengikuti urutan sort yang tampil), `/` cari, `r` fokus composer, `Esc` kembali; petunjuk tampil saat belum ada percakapan dipilih.
+  - State: error daftar kini `ErrorState` + "Try again" di panel daftar (dulu menutupi seluruh halaman); thread punya skeleton saat memuat dan `ErrorState` + retry bila gagal (dulu tampil "No messages yet"); kosong pakai `EmptyState`.
+  - Virtualisasi: daftar percakapan sudah tervirtualisasi (`@tanstack/react-virtual`); thread tidak, karena dibatasi 100 pesan per muat.
+  - Indikator: chip "24h window · 5h left" / "24h window closed" di header (kuning < 2 jam), di samping chip waktu tunggu (SLA) yang sudah ada.
+  - Layout: kolom konteks kanan kini baru inline mulai `2xl` (1536 px); di 1280 px dulu thread hanya ±125 px lebar. Di bawah 2xl konteks dibuka sebagai drawer.
+  - DoD design system: 5 file inbox keluar dari `eslint.legacy-ui.mjs` (select → `FilterSelect`/`DropdownMenu`, overlay buatan sendiri → `Dialog`, popover quick reply tanpa overlay layar penuh).
+  - Test: unit `adjacentId`, `formatWindowRemaining`; e2e baru (j/k, error thread + retry, chip 24h, `r`, dialog Assign, menu More). `pnpm lint`, `typecheck`, `test:coverage`, `build`, `test:e2e` (11/11) hijau.
 - [ ] **7.2** Broadcast wizard (template picker search + pagination, preview, validasi header media)
 - [ ] **7.3** Kontak & segmen
 - [ ] **7.4** Channel onboarding
