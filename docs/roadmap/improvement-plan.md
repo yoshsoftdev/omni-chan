@@ -130,7 +130,7 @@ Ukuran: **S** ≤ 2 hari, **M** ≤ 1 minggu, **L** > 1 minggu.
 
 Kerjakan per modul, satu PR per modul, memakai design system fase 5:
 - [x] 7.1 **Inbox** (prioritas tertinggi, dipakai harian): pecah komponen besar, keyboard shortcut, state kosong/loading/error, virtualisasi, indikator window 24 jam & SLA
-- [ ] 7.2 **Broadcast wizard**: template picker dengan search + pagination (bug #2), preview template, validasi media header (bug #1)
+- [x] 7.2 **Broadcast wizard**: template picker dengan search + pagination (bug #2), preview template, validasi media header (bug #1)
 - [ ] 7.3 **Kontak & segmen**: DataTable standar, bulk action, progres import
 - [ ] 7.4 **Channel onboarding**: stepper jelas, status readiness
 - [ ] 7.5 **Automation**: snippet, test invoke yang nyata (hapus teks "mock")

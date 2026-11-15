@@ -23,10 +23,10 @@ _Terakhir diperbarui: 2026-11-16_
 | 4 | Monitoring | 6 / 7 |
 | 5 | Design system | 6 / 6 |
 | 6 | Integritas data & pemecahan proses | 6 / 6 |
-| 7 | UI/UX revamp | 1 / 7 |
+| 7 | UI/UX revamp | 2 / 7 |
 | 8 | Migrasi NATS → Kafka | 0 / 7 |
 | 9 | Fitur R3 | 0 / 5 |
-| **Total** | | **43 / 66** |
+| **Total** | | **44 / 66** |
 
 ## Perlu tindakan manual (pemilik repo)
 
@@ -130,7 +130,13 @@ _Terakhir diperbarui: 2026-11-16_
   - Layout: kolom konteks kanan kini baru inline mulai `2xl` (1536 px); di 1280 px dulu thread hanya ±125 px lebar. Di bawah 2xl konteks dibuka sebagai drawer.
   - DoD design system: 5 file inbox keluar dari `eslint.legacy-ui.mjs` (select → `FilterSelect`/`DropdownMenu`, overlay buatan sendiri → `Dialog`, popover quick reply tanpa overlay layar penuh).
   - Test: unit `adjacentId`, `formatWindowRemaining`; e2e baru (j/k, error thread + retry, chip 24h, `r`, dialog Assign, menu More). `pnpm lint`, `typecheck`, `test:coverage`, `build`, `test:e2e` (11/11) hijau.
-- [ ] **7.2** Broadcast wizard (template picker search + pagination, preview, validasi header media)
+- [x] **7.2** Broadcast wizard — `frontend@04cb487`, `backend@c07e01f`
+  - Bug #1: template hasil sync Meta hanya punya `header_handle` (tidak bisa dipakai kirim). Wizard kini bisa mengunggah file header (dikirim sebagai `header.storage_object_id`, diresolusi backend lewat `EnsureMedia`, mengalahkan file tersimpan di template) atau URL publik. Validasi di `utils/header-media.ts` (+ unit test, + test backend).
+  - Header selalu ikut terkirim; centang "Show in preview" dulu ikut membuang header dari payload sehingga kirim gagal di Meta.
+  - Bug #2: pencarian template kini debounce 300 ms ke server (pagination sudah ada); error memuat template tampil `ErrorState` + retry (dulu selalu "sesi kedaluwarsa").
+  - Preview tampil juga di layar sempit; Review menampilkan sumber media header.
+  - Keluar dari `eslint.legacy-ui.mjs` (DataTable, FilterSelect); label form terhubung ke input.
+  - e2e baru: template gambar hasil sync terblokir sampai file diunggah, lalu dibuat dengan `storage_object_id`. Frontend lint/typecheck/128 unit/build/12 e2e hijau; backend `go test -race ./...` hijau.
 - [ ] **7.3** Kontak & segmen
 - [ ] **7.4** Channel onboarding
 - [ ] **7.5** Automation (test invoke nyata)
