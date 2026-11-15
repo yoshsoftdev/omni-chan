@@ -23,10 +23,10 @@ _Terakhir diperbarui: 2026-11-16_
 | 4 | Monitoring | 6 / 7 |
 | 5 | Design system | 6 / 6 |
 | 6 | Integritas data & pemecahan proses | 6 / 6 |
-| 7 | UI/UX revamp | 4 / 7 |
+| 7 | UI/UX revamp | 5 / 7 |
 | 8 | Migrasi NATS → Kafka | 0 / 7 |
 | 9 | Fitur R3 | 0 / 5 |
-| **Total** | | **46 / 66** |
+| **Total** | | **47 / 66** |
 
 ## Perlu tindakan manual (pemilik repo)
 
@@ -151,7 +151,12 @@ _Terakhir diperbarui: 2026-11-16_
   - Hapus channel lewat `ConfirmDialog` + pesan gagal; halaman pakai skeleton & `ErrorState` + retry.
   - `add-channel-modal` keluar dari `eslint.legacy-ui.mjs`; cluster `DevicesPage` yang tidak dirutekan dihapus (8 file).
   - e2e baru (checklist menyebut cek yang gagal; Messenger nonaktif). Lint/typecheck/135 unit/build/15 e2e hijau.
-- [ ] **7.5** Automation (test invoke nyata)
+- [x] **7.5** Automation — `frontend@1e8be64`
+  - Test invoke memang nyata (invoker produksi, pesan WhatsApp sungguhan terkirim) tetapi UI menyebut "mock executor". Kini teks jujur, wajib konfirmasi sebelum kirim, pemilih API key yang tidak pernah dikirim (dan memblokir tim tanpa key) dihapus, latensi diukur, respons tidak hilang oleh refresh setelah kirim.
+  - Snippet kode: payload di-escape per bahasa (shell, PHP, Go, Java) agar nilai berisi kutip/backslash tetap valid (+ test).
+  - `useConfirm` (ConfirmDialog yang bisa di-`await`) menggantikan `window.confirm`; rotate/hapus key melaporkan kegagalan.
+  - Semua file automation keluar dari `eslint.legacy-ui.mjs`; dialog secret sekali-tampil tidak bisa tertutup tak sengaja.
+  - e2e baru (kirim uji butuh konfirmasi, respons tampil). Lint/typecheck/136 unit/build/16 e2e/32 visual hijau.
 - [ ] **7.6** Team & settings
 - [ ] **7.7** Uji usability + audit aksesibilitas
 

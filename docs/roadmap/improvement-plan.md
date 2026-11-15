@@ -133,7 +133,7 @@ Kerjakan per modul, satu PR per modul, memakai design system fase 5:
 - [x] 7.2 **Broadcast wizard**: template picker dengan search + pagination (bug #2), preview template, validasi media header (bug #1)
 - [x] 7.3 **Kontak & segmen**: DataTable standar, bulk action, progres import
 - [x] 7.4 **Channel onboarding**: stepper jelas, status readiness
-- [ ] 7.5 **Automation**: snippet, test invoke yang nyata (hapus teks "mock")
+- [x] 7.5 **Automation**: snippet, test invoke yang nyata (hapus teks "mock")
 - [ ] 7.6 **Team & settings**
 - [ ] 7.7 Uji usability dengan 3–5 pengguna nyata per modul + audit aksesibilitas (axe)
 - DoD tiap modul: e2e test fase 3 tetap hijau, tidak ada komponen di luar design system.
