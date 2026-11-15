@@ -23,10 +23,10 @@ _Terakhir diperbarui: 2026-11-16_
 | 4 | Monitoring | 6 / 7 |
 | 5 | Design system | 6 / 6 |
 | 6 | Integritas data & pemecahan proses | 6 / 6 |
-| 7 | UI/UX revamp | 3 / 7 |
+| 7 | UI/UX revamp | 4 / 7 |
 | 8 | Migrasi NATS → Kafka | 0 / 7 |
 | 9 | Fitur R3 | 0 / 5 |
-| **Total** | | **45 / 66** |
+| **Total** | | **46 / 66** |
 
 ## Perlu tindakan manual (pemilik repo)
 
@@ -145,7 +145,12 @@ _Terakhir diperbarui: 2026-11-16_
   - `ConfirmDialog` menggantikan `window.confirm`; Dialog kini di atas drawer (z 65).
   - Semua file kontak keluar dari `eslint.legacy-ui.mjs`. Kode mati dihapus (cluster `contacts-page`, panel metadata, segment picker, placeholder analitik, tombol "More actions" palsu).
   - Spec OpenAPI: 2 operasi import + parameter `source`/`city` (176/176, redocly valid). Frontend lint/typecheck/132 unit/build/14 e2e/32 visual hijau; backend `go test -race ./...` + integration hijau.
-- [ ] **7.4** Channel onboarding
+- [x] **7.4** Channel onboarding — `frontend@3adf8de`
+  - Readiness kini daftar periksa per syarat (terhubung, token, nomor, verifikasi bisnis, pembayaran, template) beserta cara memperbaiki; dulu hanya satu pesan dan mengabaikan cek token/template yang gagal (`utils/channel-readiness.ts` + test).
+  - Dialog Add Channel: `Dialog` + `StepWizard`, Provider → Connect → Done. Langkah "Channel Info" dihapus karena nama & catatan yang diisi tidak pernah dipakai; Messenger tampil "Coming soon" dan tidak bisa dipilih.
+  - Hapus channel lewat `ConfirmDialog` + pesan gagal; halaman pakai skeleton & `ErrorState` + retry.
+  - `add-channel-modal` keluar dari `eslint.legacy-ui.mjs`; cluster `DevicesPage` yang tidak dirutekan dihapus (8 file).
+  - e2e baru (checklist menyebut cek yang gagal; Messenger nonaktif). Lint/typecheck/135 unit/build/15 e2e hijau.
 - [ ] **7.5** Automation (test invoke nyata)
 - [ ] **7.6** Team & settings
 - [ ] **7.7** Uji usability + audit aksesibilitas
