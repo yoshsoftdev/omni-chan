@@ -135,7 +135,7 @@ Kerjakan per modul, satu PR per modul, memakai design system fase 5:
 - [x] 7.4 **Channel onboarding**: stepper jelas, status readiness
 - [x] 7.5 **Automation**: snippet, test invoke yang nyata (hapus teks "mock")
 - [x] 7.6 **Team & settings**
-- [ ] 7.7 Uji usability dengan 3–5 pengguna nyata per modul + audit aksesibilitas (axe)
+- [ ] 7.7 Uji usability dengan 3–5 pengguna nyata per modul + audit aksesibilitas (axe) — axe ✅ di CI; uji usability menunggu pemilik produk ([rencana](../design/usability-test-plan.md))
 - DoD tiap modul: e2e test fase 3 tetap hijau, tidak ada komponen di luar design system.
 
 ## Fase 8 — Migrasi NATS → Kafka (L)

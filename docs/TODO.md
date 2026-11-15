@@ -38,6 +38,7 @@ _Terakhir diperbarui: 2026-11-16_
 - [ ] Compose kini **mewajibkan** `META_TOKEN_ENCRYPTION_KEY` (base64 32 byte; dulu tidak diteruskan sehingga backend tak bisa start) dan, untuk stack monitoring, `GRAFANA_ADMIN_PASSWORD`
 - [ ] Alertmanager: isi receiver notifikasi (Slack/email/webhook) di `deploy/observability/alertmanager.yml`
 - [ ] Putuskan Sentry (butir 4.4): pakai SaaS, self-host, atau cukup Loki + alert
+- [ ] Jalankan uji usability fase 7 dengan 3–5 pengguna nyata per modul (= butir 7.7) — skenario di `design/usability-test-plan.md`
 - [ ] GitHub: aktifkan branch protection "require status checks" (`ci`) di kelima repo — DoD fase 3
 
 ---
@@ -163,7 +164,9 @@ _Terakhir diperbarui: 2026-11-16_
   - Cluster `TeamPage` yang tidak dirutekan dihapus (3 file).
   - Lanjutan 7.2 (`frontend@9792ec8`): sisa 6 file broadcast juga dimigrasi; **`eslint.legacy-ui.mjs` kini kosong** (DoD fase 7 "tidak ada komponen di luar design system").
   - e2e baru (undang lewat dialog; hapus menunggu konfirmasi). Lint/typecheck/136 unit/build/17 e2e/32 visual hijau.
-- [ ] **7.7** Uji usability + audit aksesibilitas
+- [ ] **7.7** Uji usability + audit aksesibilitas — **sebagian**
+  - ✅ Audit axe (WCAG 2.1 A/AA) di 9 halaman utama, mode terang & gelap, jalan di CI (`frontend/e2e/a11y.e2e.ts`, 18 test). Temuan diperbaiki: token `--muted-foreground` 46% → 44% (kontras 4,4 → 4,75:1 di atas `--muted`), tab nonaktif tidak lagi di bawah AA, select ukuran halaman diberi label, stepper kampanye memakai `StepWizard` — `frontend@4bc9853`.
+  - ⏳ Uji usability 3–5 pengguna nyata per modul: **perlu dijalankan pemilik produk**. Skenario, ambang lulus, dan tabel hasil: [design/usability-test-plan.md](design/usability-test-plan.md).
 
 ## Fase 8 — Migrasi NATS → Kafka
 

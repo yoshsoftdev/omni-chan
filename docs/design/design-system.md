@@ -24,7 +24,7 @@ Didefinisikan di `src/app/globals.css` (HSL, light + `.dark`) dan dipetakan di `
 | `card` | `#FFFFFF` | kartu, input, panel |
 | `background` | `#F6F7F9` | latar halaman |
 | `muted` | `#F3F4F6` | isian halus, hover baris |
-| `muted-foreground` | `#6B7280` | teks sekunder, disabled |
+| `muted-foreground` | `#666D7A` | teks sekunder, disabled (≥ 4.5:1 di atas `muted`, cek axe 7.7) |
 | `border`, `input` | `#E5E7EB` | garis, outline input |
 | `success` (+`-foreground`, `-muted`, `-border`) | `#16A34A` | status positif |
 | `warning` (…) | `#F59E0B` | perlu perhatian |
