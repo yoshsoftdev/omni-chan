@@ -60,7 +60,7 @@ Cara update: ubah status di tabel ini dalam PR yang sama dengan perubahan kodeny
 | ID | Fitur | Status | Frontend | Backend |
 |---|---|---|---|---|
 | CONT-01 | CRUD kontak + consent | ✅ | `contacts` | `internal/contact` |
-| CONT-02 | Import CSV / Excel (job async) | ✅ | `contacts/import` | `internal/importjob` |
+| CONT-02 | Import CSV / Excel (sinkron, ≤ 5.000 baris / 10 MB, pemetaan kolom, laporan per baris) | ✅ | `contacts/import` | `internal/contact/import.go` (`internal/importjob` belum dipakai) |
 | CONT-03 | Segmen | ✅ | `contacts/segments` | `internal/segment` |
 | CONT-04 | Tag | ✅ | `contacts/tags` | `internal/tag` |
 | CONT-05 | Provider profile (satu kontak, banyak akun) | ✅ | `contacts` | ADR [0003](../adr/0003-provider-profile.md), [0004](../adr/0004-contact-linking.md) |

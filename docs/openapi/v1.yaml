@@ -1391,6 +1391,32 @@ components:
         updated_at:
           type: string
           format: date-time
+    ContactImportResult:
+      type: object
+      required:
+      - created
+      - updated
+      - skipped
+      properties:
+        created:
+          type: integer
+        updated:
+          type: integer
+        skipped:
+          type: integer
+        errors:
+          type: array
+          items:
+            type: object
+            required:
+            - line
+            - message
+            properties:
+              line:
+                type: integer
+                description: 1-based line in the uploaded file
+              message:
+                type: string
     ContactLastCampaignRef:
       type: object
       required:
@@ -4757,6 +4783,22 @@ paths:
         schema:
           type: string
       - in: query
+        name: source
+        schema:
+          type: string
+          enum:
+          - whatsapp
+          - import
+          - manual
+          - api
+          - meta_inbound
+          - ig
+      - in: query
+        name: city
+        description: Case-insensitive substring match
+        schema:
+          type: string
+      - in: query
         name: search
         schema:
           type: string
@@ -4825,6 +4867,92 @@ paths:
         default:
           $ref: '#/components/responses/Error'
       operationId: contactsCreate
+  /contacts/import/csv:
+    post:
+      tags:
+      - Contacts
+      summary: Import contacts from a CSV file
+      description: Synchronous, up to 5000 rows and 10 MB. Existing phone numbers are updated with the non-empty
+        fields of the row; new ones are created with source `import`. Bad rows are skipped and reported by file line.
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+              - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                mapping:
+                  type: string
+                  description: 'JSON object of file column header to field (name, phone, email, notes, city,
+                    company; empty string skips the column). Without it, common header names are recognised, and
+                    a file without a header is read as name, phone, email, notes.'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/SuccessResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '#/components/schemas/ContactImportResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      operationId: contactsImportCsv
+  /contacts/import/excel:
+    post:
+      tags:
+      - Contacts
+      summary: Import contacts from the first sheet of an .xlsx file
+      description: Synchronous, up to 5000 rows and 10 MB. Existing phone numbers are updated with the non-empty
+        fields of the row; new ones are created with source `import`. Bad rows are skipped and reported by file line.
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+              - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                mapping:
+                  type: string
+                  description: 'JSON object of file column header to field (name, phone, email, notes, city,
+                    company; empty string skips the column). Without it, common header names are recognised, and
+                    a file without a header is read as name, phone, email, notes.'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/SuccessResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '#/components/schemas/ContactImportResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+      operationId: contactsImportExcel
   /contacts/{id}:
     get:
       tags:

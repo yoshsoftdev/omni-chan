@@ -23,10 +23,10 @@ _Terakhir diperbarui: 2026-11-16_
 | 4 | Monitoring | 6 / 7 |
 | 5 | Design system | 6 / 6 |
 | 6 | Integritas data & pemecahan proses | 6 / 6 |
-| 7 | UI/UX revamp | 2 / 7 |
+| 7 | UI/UX revamp | 3 / 7 |
 | 8 | Migrasi NATS → Kafka | 0 / 7 |
 | 9 | Fitur R3 | 0 / 5 |
-| **Total** | | **44 / 66** |
+| **Total** | | **45 / 66** |
 
 ## Perlu tindakan manual (pemilik repo)
 
@@ -137,7 +137,14 @@ _Terakhir diperbarui: 2026-11-16_
   - Preview tampil juga di layar sempit; Review menampilkan sumber media header.
   - Keluar dari `eslint.legacy-ui.mjs` (DataTable, FilterSelect); label form terhubung ke input.
   - e2e baru: template gambar hasil sync terblokir sampai file diunggah, lalu dibuat dengan `storage_object_id`. Frontend lint/typecheck/128 unit/build/12 e2e hijau; backend `go test -race ./...` hijau.
-- [ ] **7.3** Kontak & segmen
+- [x] **7.3** Kontak & segmen — `frontend@ff96b2c`, `backend@6d7c686`
+  - Import kontak ternyata tidak berfungsi: endpoint `/contacts/import/{csv,excel}` mengembalikan 501 dan tidak terdaftar di v1; langkah "Map Columns" tidak pernah dikirim; `features.md` salah menandai ✅. Kini: import sinkron (≤ 5.000 baris / 10 MB) dengan pemetaan kolom, upsert per nomor telepon, laporan baris yang dilewati per nomor baris. Wizard menampilkan progres dan laporan hasil. Integration test di Postgres asli.
+  - Bulk action: pilih kontak → tambah tag / hapus, kegagalan dihitung dan dilaporkan.
+  - Filter sumber & kota kini di server (dulu hanya menyaring halaman yang tampil sehingga total & paginasi salah); filter Source dapat opsi "All Sources".
+  - Edit segmen & aturan segmen kini tersimpan lewat `PATCH /segments/:id` (dulu hanya lokal, "API update pending").
+  - `ConfirmDialog` menggantikan `window.confirm`; Dialog kini di atas drawer (z 65).
+  - Semua file kontak keluar dari `eslint.legacy-ui.mjs`. Kode mati dihapus (cluster `contacts-page`, panel metadata, segment picker, placeholder analitik, tombol "More actions" palsu).
+  - Spec OpenAPI: 2 operasi import + parameter `source`/`city` (176/176, redocly valid). Frontend lint/typecheck/132 unit/build/14 e2e/32 visual hijau; backend `go test -race ./...` + integration hijau.
 - [ ] **7.4** Channel onboarding
 - [ ] **7.5** Automation (test invoke nyata)
 - [ ] **7.6** Team & settings
