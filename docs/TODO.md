@@ -23,10 +23,10 @@ _Terakhir diperbarui: 2026-11-16_
 | 4 | Monitoring | 6 / 7 |
 | 5 | Design system | 6 / 6 |
 | 6 | Integritas data & pemecahan proses | 6 / 6 |
-| 7 | UI/UX revamp | 5 / 7 |
+| 7 | UI/UX revamp | 6 / 7 |
 | 8 | Migrasi NATS → Kafka | 0 / 7 |
 | 9 | Fitur R3 | 0 / 5 |
-| **Total** | | **47 / 66** |
+| **Total** | | **48 / 66** |
 
 ## Perlu tindakan manual (pemilik repo)
 
@@ -157,7 +157,12 @@ _Terakhir diperbarui: 2026-11-16_
   - `useConfirm` (ConfirmDialog yang bisa di-`await`) menggantikan `window.confirm`; rotate/hapus key melaporkan kegagalan.
   - Semua file automation keluar dari `eslint.legacy-ui.mjs`; dialog secret sekali-tampil tidak bisa tertutup tak sengaja.
   - e2e baru (kirim uji butuh konfirmasi, respons tampil). Lint/typecheck/136 unit/build/16 e2e/32 visual hijau.
-- [ ] **7.6** Team & settings
+- [x] **7.6** Team & settings — `frontend@7980366`
+  - Semua file team & settings keluar dari `eslint.legacy-ui.mjs`: 12 overlay buatan sendiri → `Dialog` (editor anggota → `Sheet`), tabel → `DataTable`, select → `FilterSelect` (kini mendukung `disabled`), popover aksi baris → `DropdownMenu`. Input, select role, dan tombol izin kini punya nama aksesibel.
+  - Hapus anggota & hapus quick reply lewat `useConfirm`; toast halaman users dipindah ke lapisan toast (z 80) agar tidak tertutup dialog.
+  - Cluster `TeamPage` yang tidak dirutekan dihapus (3 file).
+  - Lanjutan 7.2 (`frontend@9792ec8`): sisa 6 file broadcast juga dimigrasi; **`eslint.legacy-ui.mjs` kini kosong** (DoD fase 7 "tidak ada komponen di luar design system").
+  - e2e baru (undang lewat dialog; hapus menunggu konfirmasi). Lint/typecheck/136 unit/build/17 e2e/32 visual hijau.
 - [ ] **7.7** Uji usability + audit aksesibilitas
 
 ## Fase 8 — Migrasi NATS → Kafka
