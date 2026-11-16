@@ -25,8 +25,8 @@ _Terakhir diperbarui: 2026-11-16_
 | 6 | Integritas data & pemecahan proses | 6 / 6 |
 | 7 | UI/UX revamp | 6 / 7 |
 | 8 | Pengerasan NATS | 6 / 6 ✅ |
-| 9 | Fitur R3 | 0 / 5 |
-| **Total** | | **54 / 65** |
+| 9 | Fitur R3 | 1 / 5 |
+| **Total** | | **55 / 65** |
 
 ## Perlu tindakan manual (pemilik repo)
 
@@ -180,7 +180,11 @@ _Terakhir diperbarui: 2026-11-16_
 
 ## Fase 9 — Fitur R3
 
-- [ ] **9.1** RBAC di semua modul
+- [x] **9.1** RBAC di semua modul — `backend@ba8e159`, `frontend@e09b0a8`, [audit](security/rbac-audit.md)
+  - Celah nyata: Embedded Signup, re-authorize, dan link pembayaran channel bisa dijalankan role apa pun (agent bisa menghubungkan nomor WhatsApp). Kini `device.manage` / `device.view` dicek di service Meta; tanpa authorizer = ditolak (+ test).
+  - `GET /auth/me` mengembalikan kode permission role; UI memakai daftar ini (dulu peta role hard-coded yang tidak sinkron dengan DB dan mengabaikan role kustom).
+  - Aksi kelola disembunyikan per permission di semua modul + sidebar. e2e: tampilan agent di kontak, sidebar, inbox.
+  - Kebijakan sengaja: daftar anggota tim & penempelan tag cukup keanggotaan. Batasan diketahui: cache RBAC per nama role (role kustom lintas tim berbagi nama).
 - [ ] **9.2** Keyword reply & welcome message
 - [ ] **9.3** Analitik inbox + laporan agent
 - [ ] **9.4** Telegram end-to-end (jika dikonfirmasi)

@@ -30,7 +30,7 @@ Cara update: ubah status di tabel ini dalam PR yang sama dengan perubahan kodeny
 | TEAM-01 | Kelola user tim | ✅ | `team/users` | `internal/team` |
 | TEAM-02 | Role & permission matrix | ✅ | `team/roles`, `team/permissions` | `internal/rbac` |
 | TEAM-03 | Activity log | ✅ | `team/activity` | `internal/team` |
-| TEAM-04 | Permission dipakai di **semua** modul | 🟡 | – | Belum merata (lihat [rbac-audit](../archive/reviews/rbac-audit.md)) |
+| TEAM-04 | Permission dipakai di **semua** modul | ✅ | semua modul (aksi disembunyikan per permission) | Service + `/auth/me` `permissions` — lihat [rbac-audit](../security/rbac-audit.md) |
 
 ## F-CHAN — Channel / Device
 | ID | Fitur | Status | Frontend | Backend |

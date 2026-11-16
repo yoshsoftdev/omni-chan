@@ -320,6 +320,7 @@ components:
       - user
       - team
       - role
+      - permissions
       properties:
         user:
           $ref: '#/components/schemas/AuthUserProfile'
@@ -327,6 +328,11 @@ components:
           $ref: '#/components/schemas/AuthTeamProfile'
         role:
           type: string
+        permissions:
+          type: array
+          description: Permission codes the role grants (e.g. contact.create). The UI shows only actions in this list; the API enforces the same codes.
+          items:
+            type: string
     AuthTeamProfile:
       type: object
       required:
