@@ -170,7 +170,7 @@ _Terakhir diperbarui: 2026-11-16_
 
 ## Fase 8 — Migrasi NATS → Kafka
 
-- [ ] **8.1** ADR-0008 event bus
+- [ ] **8.1** ADR event bus — draf [ADR 0009](adr/0009-event-bus.md) (Proposed, rekomendasi: tetap NATS + cluster 3 node), **menunggu keputusan PO**
 - [ ] **8.2** Abstraksi `shared/eventbus`
 - [ ] **8.3** Desain topic & partition key
 - [ ] **8.4** Infra Kafka (KRaft) + monitoring lag
