@@ -154,7 +154,7 @@ Keputusan [ADR 0009](../adr/0009-event-bus.md) (2026-11-16): **tetap di NATS**, 
 ## Fase 9 — Penyelesaian fitur R3 (L)
 
 - [x] 9.1 RBAC diterapkan di semua modul (TEAM-04)
-- [ ] 9.2 Keyword reply & welcome message
+- [x] 9.2 Keyword reply & welcome message
 - [ ] 9.3 Analitik inbox (volume, first response time, resolusi) + laporan agent
 - [ ] 9.4 Telegram end-to-end (jika dikonfirmasi di PRD)
 - [ ] 9.5 Billing (jika masuk lingkup)

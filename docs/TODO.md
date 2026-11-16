@@ -25,8 +25,8 @@ _Terakhir diperbarui: 2026-11-16_
 | 6 | Integritas data & pemecahan proses | 6 / 6 |
 | 7 | UI/UX revamp | 6 / 7 |
 | 8 | Pengerasan NATS | 6 / 6 ✅ |
-| 9 | Fitur R3 | 1 / 5 |
-| **Total** | | **55 / 65** |
+| 9 | Fitur R3 | 2 / 5 |
+| **Total** | | **56 / 65** |
 
 ## Perlu tindakan manual (pemilik repo)
 
@@ -185,7 +185,12 @@ _Terakhir diperbarui: 2026-11-16_
   - `GET /auth/me` mengembalikan kode permission role; UI memakai daftar ini (dulu peta role hard-coded yang tidak sinkron dengan DB dan mengabaikan role kustom).
   - Aksi kelola disembunyikan per permission di semua modul + sidebar. e2e: tampilan agent di kontak, sidebar, inbox.
   - Kebijakan sengaja: daftar anggota tim & penempelan tag cukup keanggotaan. Batasan diketahui: cache RBAC per nama role (role kustom lintas tim berbagi nama).
-- [ ] **9.2** Keyword reply & welcome message
+- [x] **9.2** Keyword reply & welcome message — `backend@bfe7678`, `frontend@f8d47f1`
+  - Welcome message (per tim) dikirim saat percakapan pertama pelanggan di sebuah channel dimulai. Aturan keyword (exact / contains kata utuh, abaikan huruf besar & tanda baca, urutan prioritas) menjawab pesan teks masuk; **berhenti 24 jam setelah agent manusia membalas** (bukan saat di-assign, karena assignment otomatis akan mematikannya).
+  - Dipicu di event consumer setelah pesan masuk baru tersimpan (WhatsApp & Instagram), tidak pada redelivery; ledger `UNIQUE(inbound_message_id, kind)` menjamin satu kiriman (uji 16 klaim paralel di Postgres). Gagal kirim hanya di-log, tidak menggagalkan ingest.
+  - Balasan otomatis tidak dihitung sebagai respons manusia (first response, last agent message, waktu tunggu tidak berubah) — penting untuk 9.3.
+  - API `GET/PUT /inbox/settings/welcome`, CRUD `/inbox/keyword-rules` (izin `automation.*`), migrasi `000055`, OpenAPI 182/182. Halaman Settings → Auto Reply (read-only tanpa izin), masuk audit axe.
+  - **Default yang saya pilih (mohon dikonfirmasi PO):** welcome per tim (bukan per channel); keyword hanya untuk pesan teks; jeda 24 jam setelah agent membalas; balasan dikirim atas nama owner tim (pola sama dengan window recontact).
 - [ ] **9.3** Analitik inbox + laporan agent
 - [ ] **9.4** Telegram end-to-end (jika dikonfirmasi)
 - [ ] **9.5** Billing (jika masuk lingkup)

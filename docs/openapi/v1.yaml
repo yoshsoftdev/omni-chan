@@ -2078,6 +2078,68 @@ components:
           type: string
         has_more:
           type: boolean
+    InboxWelcomeSettings:
+      type: object
+      required:
+      - enabled
+      - text
+      properties:
+        enabled:
+          type: boolean
+        text:
+          type: string
+          maxLength: 1000
+    InboxKeywordRuleRequest:
+      type: object
+      required:
+      - keywords
+      - reply_text
+      properties:
+        keywords:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items:
+            type: string
+            maxLength: 100
+        match_type:
+          type: string
+          enum:
+          - exact
+          - contains
+          default: contains
+          description: exact = the whole message equals a keyword; contains = a keyword appears as whole word(s). Case and
+            punctuation are ignored.
+        reply_text:
+          type: string
+          maxLength: 1000
+        enabled:
+          type: boolean
+          default: true
+        sort_order:
+          type: integer
+          description: Lower runs first.
+    InboxKeywordRule:
+      allOf:
+      - $ref: '#/components/schemas/InboxKeywordRuleRequest'
+      - type: object
+        required:
+        - id
+        - match_type
+        - enabled
+        - sort_order
+        - created_at
+        - updated_at
+        properties:
+          id:
+            type: string
+            format: uuid
+          created_at:
+            type: string
+            format: date-time
+          updated_at:
+            type: string
+            format: date-time
     InboxWindowRecontactSettings:
       type: object
       required:
@@ -9370,6 +9432,191 @@ paths:
         default:
           $ref: '#/components/responses/Error'
       operationId: inboxList
+  /inbox/settings/welcome:
+    get:
+      tags:
+      - Inbox
+      summary: Get the welcome message
+      description: Sent automatically when a customer's first conversation on a channel starts. Needs automation.view.
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/SuccessResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '#/components/schemas/InboxWelcomeSettings'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        default:
+          $ref: '#/components/responses/Error'
+      operationId: inboxGetWelcomeSettings
+    put:
+      tags:
+      - Inbox
+      summary: Update the welcome message
+      description: Needs automation.update. Text is required when enabled (max 1000 characters).
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InboxWelcomeSettings'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/SuccessResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '#/components/schemas/InboxWelcomeSettings'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        default:
+          $ref: '#/components/responses/Error'
+      operationId: inboxUpdateWelcomeSettings
+  /inbox/keyword-rules:
+    get:
+      tags:
+      - Inbox
+      summary: List keyword auto-reply rules
+      description: In evaluation order (sort_order, then creation). The first enabled rule matching an inbound text message
+        answers it, unless a human agent replied in the last 24 hours. Needs automation.view.
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/SuccessResponse'
+                - type: object
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        items:
+                          type: array
+                          items:
+                            $ref: '#/components/schemas/InboxKeywordRule'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        default:
+          $ref: '#/components/responses/Error'
+      operationId: inboxListKeywordRules
+    post:
+      tags:
+      - Inbox
+      summary: Create a keyword auto-reply rule
+      description: Needs automation.create. At most 100 rules per team, 20 keywords per rule.
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InboxKeywordRuleRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/SuccessResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '#/components/schemas/InboxKeywordRule'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        default:
+          $ref: '#/components/responses/Error'
+      operationId: inboxCreateKeywordRule
+  /inbox/keyword-rules/{id}:
+    parameters:
+    - in: path
+      name: id
+      required: true
+      schema:
+        type: string
+        format: uuid
+    patch:
+      tags:
+      - Inbox
+      summary: Replace a keyword auto-reply rule
+      description: Needs automation.update. The body replaces the rule.
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InboxKeywordRuleRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/SuccessResponse'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '#/components/schemas/InboxKeywordRule'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        default:
+          $ref: '#/components/responses/Error'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      operationId: inboxUpdateKeywordRule
+    delete:
+      tags:
+      - Inbox
+      summary: Delete a keyword auto-reply rule
+      description: Needs automation.delete.
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      operationId: inboxDeleteKeywordRule
   /inbox/settings/window-recontact:
     get:
       tags:

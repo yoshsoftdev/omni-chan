@@ -55,6 +55,7 @@ Cara update: ubah status di tabel ini dalam PR yang sama dengan perubahan kodeny
 | INBOX-08 | Quick replies | ✅ | `settings/quick-replies` | `internal/quickreply` |
 | INBOX-09 | Window recontact otomatis | ✅ | `settings/window-recontact` | `internal/inbox` (klaim ledger mencegah kirim ganda antar replika) |
 | INBOX-10 | Media player (audio/video/gambar terautentikasi) | ✅ | `features/inbox` | `internal/media`, storage-service |
+| INBOX-11 | Welcome message & keyword auto-reply (berhenti 24 jam setelah agent membalas) | ✅ | `settings/auto-reply` | `internal/inbox` (AutoReplyService, ledger per pesan masuk) |
 
 ## F-CONT — Kontak
 | ID | Fitur | Status | Frontend | Backend |
