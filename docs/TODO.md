@@ -24,9 +24,9 @@ _Terakhir diperbarui: 2026-11-16_
 | 5 | Design system | 6 / 6 |
 | 6 | Integritas data & pemecahan proses | 6 / 6 |
 | 7 | UI/UX revamp | 6 / 7 |
-| 8 | Migrasi NATS → Kafka | 0 / 7 |
+| 8 | Pengerasan NATS | 1 / 6 |
 | 9 | Fitur R3 | 0 / 5 |
-| **Total** | | **48 / 66** |
+| **Total** | | **49 / 65** |
 
 ## Perlu tindakan manual (pemilik repo)
 
@@ -168,15 +168,14 @@ _Terakhir diperbarui: 2026-11-16_
   - ✅ Audit axe (WCAG 2.1 A/AA) di 9 halaman utama, mode terang & gelap, jalan di CI (`frontend/e2e/a11y.e2e.ts`, 18 test). Temuan diperbaiki: token `--muted-foreground` 46% → 44% (kontras 4,4 → 4,75:1 di atas `--muted`), tab nonaktif tidak lagi di bawah AA, select ukuran halaman diberi label, stepper kampanye memakai `StepWizard` — `frontend@4bc9853`.
   - ⏳ Uji usability 3–5 pengguna nyata per modul: **perlu dijalankan pemilik produk**. Skenario, ambang lulus, dan tabel hasil: [design/usability-test-plan.md](design/usability-test-plan.md).
 
-## Fase 8 — Migrasi NATS → Kafka
+## Fase 8 — Pengerasan NATS (keputusan: tetap NATS, [ADR 0009](adr/0009-event-bus.md))
 
-- [ ] **8.1** ADR event bus — draf [ADR 0009](adr/0009-event-bus.md) (Proposed, rekomendasi: tetap NATS + cluster 3 node), **menunggu keputusan PO**
-- [ ] **8.2** Abstraksi `shared/eventbus`
-- [ ] **8.3** Desain topic & partition key
-- [ ] **8.4** Infra Kafka (KRaft) + monitoring lag
-- [ ] **8.5** Implementasi `eventbus/kafka` + integration test
-- [ ] **8.6** Migrasi per stream (dual-publish → shadow → cutover)
-- [ ] **8.7** Hapus NATS + update dokumen
+- [x] **8.1** ADR event bus — [ADR 0009](adr/0009-event-bus.md) Accepted 2026-11-16: tetap NATS JetStream, Kafka hanya bila pemicu di ADR terpenuhi
+- [ ] **8.2** Stream `BROADCAST` lewat `EnsureStream`; retensi & replika per stream dari konfigurasi
+- [ ] **8.3** NATS 3 node (cluster) di compose & deploy; stream `Replicas: 3`
+- [ ] **8.4** Uji failover satu node mati tanpa event hilang
+- [ ] **8.5** Rekonsiliasi count harian + alert
+- [ ] **8.6** Update dokumen (tech stack, alur data, events, PRD Q3)
 
 ## Fase 9 — Fitur R3
 

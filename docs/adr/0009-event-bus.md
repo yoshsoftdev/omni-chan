@@ -1,8 +1,8 @@
-# Event bus: stay on NATS JetStream or move to Kafka
+# Event bus: stay on NATS JetStream
 
 ## Status
 
-Proposed — waiting for the product owner and architecture review (roadmap item 8.1).
+Accepted — decided by the product owner on 2026-11-16 (roadmap item 8.1).
 
 ## Date
 
@@ -38,9 +38,9 @@ Choose the event bus for the next 12–18 months against these criteria:
 
 ## Decision
 
-**Proposed: stay on NATS JetStream.** Phase 8 becomes "harden NATS" rather than "migrate", and Kafka is revisited only when one of the triggers below is met.
+**Stay on NATS JetStream.** Phase 8 becomes "harden NATS" rather than "migrate", and Kafka is revisited only when one of the triggers below is met.
 
-Concretely, if accepted:
+Concretely:
 
 1. Run NATS as a 3-node cluster with `Replicas: 3` on both streams. The single node is the real availability risk today, and every option below needs a highly available broker anyway.
 2. Put retention per stream in config (it is a constant today) so it can grow without a code change.
@@ -67,7 +67,7 @@ Concretely, if accepted:
 - **Against:** the same consumer rewrite and cutover risk as A. The vendor licence (BSL for some features) and a smaller community than Kafka.
 - **Rejected for now** for the same reason as A. If a trigger fires, compare it against A at that time.
 
-### C. Stay on NATS JetStream (proposed)
+### C. Stay on NATS JetStream (chosen)
 
 - **For:** already running, tuned and monitored. Phase 0 fixed its real faults, and idempotency and dedup now live in Postgres, independent of the bus. It is light to operate. JetStream already offers replay from a sequence or time, per-subject ordering, and server-side dedup.
 - **Against:** a weaker ecosystem for analytics and CDC. Long retention is less common practice, and fewer engineers know it.

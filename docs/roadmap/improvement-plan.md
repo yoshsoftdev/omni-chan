@@ -138,16 +138,18 @@ Kerjakan per modul, satu PR per modul, memakai design system fase 5:
 - [ ] 7.7 Uji usability dengan 3–5 pengguna nyata per modul + audit aksesibilitas (axe) — axe ✅ di CI; uji usability menunggu pemilik produk ([rencana](../design/usability-test-plan.md))
 - DoD tiap modul: e2e test fase 3 tetap hijau, tidak ada komponen di luar design system.
 
-## Fase 8 — Migrasi NATS → Kafka (L)
+## Fase 8 — Pengerasan NATS JetStream (M)
 
-- [ ] 8.1 **ADR-0008** event bus: Kafka vs Redpanda vs tetap NATS, dengan kriteria retensi, replay, ordering, ops cost, dan kebutuhan integrasi data
-- [ ] 8.2 Abstraksi `shared/eventbus` (`Publisher`, `Subscriber`, `Message{Key, Headers, Ack/Nack}`); semua kode pindah ke interface ini (masih dengan implementasi NATS)
-- [ ] 8.3 Desain topic: `webhook.meta.events`, `webhook.meta.dlq`, `broadcast.jobs`, `broadcast.batches`; partition key `team_id` (atau `team_id:conversation_id` untuk urutan per percakapan); retensi; skema envelope (pertimbangkan Schema Registry)
-- [ ] 8.4 Infra Kafka (KRaft) di compose & deploy + monitoring lag (kafka-exporter) di Grafana fase 4
-- [ ] 8.5 Implementasi `eventbus/kafka` (franz-go atau segmentio/kafka-go) + integration test dengan testcontainers
-- [ ] 8.6 Migrasi per stream: **dual-publish** → consumer Kafka shadow (hasil dibandingkan, tidak menulis) → cutover → matikan NATS untuk stream itu. Mulai dari broadcast (sudah pakai outbox), lalu webhook ingress.
-- [ ] 8.7 Hapus dependensi NATS dan update dokumen (tech stack, alur data, `domain/events/*`)
-- DoD fase: tidak ada event hilang selama cutover (dibuktikan dengan rekonsiliasi count per hari) dan lag terpantau.
+Keputusan [ADR 0009](../adr/0009-event-bus.md) (2026-11-16): **tetap di NATS**, tidak migrasi ke Kafka. Kafka dibuka lagi hanya bila pemicu di ADR terpenuhi (konsumen di luar platform/CDC, retensi > ~30 hari, > ~10k event/detik).
+
+- [x] 8.1 ADR event bus — ADR 0009, Accepted
+- [ ] 8.2 Stream `BROADCAST` dikelola `EnsureStream` (bukan create-on-any-error); retensi & replika per stream dari konfigurasi dan diterapkan ke stream yang sudah ada
+- [ ] 8.3 NATS 3 node (cluster JetStream) di compose & panduan deploy; stream `Replicas: 3`
+- [ ] 8.4 Uji failover: satu node mati, publish & consume tetap jalan tanpa event hilang
+- [ ] 8.5 Rekonsiliasi count harian (webhook masuk vs pesan tersimpan) sebagai metrik + alert
+- [ ] 8.6 Update dokumen (tech stack S9, alur data, `domain/events/*`, PRD pertanyaan 3)
+- ~~Abstraksi `shared/eventbus`, desain topic Kafka, infra Kafka, dual-publish, hapus NATS~~ — dibatalkan oleh ADR 0009.
+- DoD fase: kehilangan satu node NATS tidak menghentikan ingest/broadcast dan tidak menghilangkan event (dibuktikan test), lag & rekonsiliasi terpantau.
 
 ## Fase 9 — Penyelesaian fitur R3 (L)
 

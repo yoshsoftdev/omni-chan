@@ -16,7 +16,7 @@ Implementation must conform to accepted ADRs. An ADR explains architectural inte
 - [ADR 0006: Canonical Message](0006-canonical-message.md)
 - [ADR 0007: Provider Abstraction](0007-provider-abstraction.md)
 - [ADR 0008: Message wamid dedup in the database](0008-message-wamid-dedup.md)
-- [ADR 0009: Event bus — stay on NATS JetStream or move to Kafka](0009-event-bus.md) (Proposed)
+- [ADR 0009: Event bus — stay on NATS JetStream](0009-event-bus.md)
 
 ## ADR Numbering
 
