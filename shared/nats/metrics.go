@@ -15,7 +15,21 @@ type JetStreamCollector struct {
 	stream    string
 	consumers []string
 
-	pending, ackPending, redelivered, dlq, up, bytes, maxBytes *prometheus.Desc
+	pending, ackPending, redelivered, expired, dlq, up, bytes, maxBytes *prometheus.Desc
+}
+
+// expiredUnacked counts stream messages that left the stream (retention limits) after
+// the consumer's ack floor while it still had work: events lost before being processed.
+// Zero once the consumer has nothing pending, since then nothing it needed was dropped.
+func expiredUnacked(streamFirstSeq uint64, consumer *nats.ConsumerInfo) uint64 {
+	if consumer.NumPending+uint64(consumer.NumAckPending) == 0 {
+		return 0
+	}
+	next := consumer.AckFloor.Stream + 1
+	if streamFirstSeq <= next {
+		return 0
+	}
+	return streamFirstSeq - next
 }
 
 // NewJetStreamCollector watches the given durable consumers of stream.
@@ -26,6 +40,7 @@ func NewJetStreamCollector(js nats.JetStreamContext, stream string, consumers ..
 		pending:     prometheus.NewDesc("jetstream_consumer_pending_messages", "Messages not yet delivered to the consumer (lag).", labels, nil),
 		ackPending:  prometheus.NewDesc("jetstream_consumer_ack_pending_messages", "Messages delivered but not yet acknowledged.", labels, nil),
 		redelivered: prometheus.NewDesc("jetstream_consumer_redelivered_messages", "Messages currently being redelivered.", labels, nil),
+		expired:     prometheus.NewDesc("jetstream_consumer_expired_unacked_messages", "Messages removed by stream retention before the consumer acknowledged them (lost events).", labels, nil),
 		dlq:         prometheus.NewDesc("jetstream_dlq_messages", "Messages stored on a dead-letter subject.", []string{"stream", "subject"}, nil),
 		up:          prometheus.NewDesc("jetstream_up", "1 when the stream could be read at scrape time.", []string{"stream"}, nil),
 		bytes:       prometheus.NewDesc("jetstream_stream_bytes", "Bytes stored in the stream.", []string{"stream"}, nil),
@@ -34,14 +49,16 @@ func NewJetStreamCollector(js nats.JetStreamContext, stream string, consumers ..
 }
 
 func (c *JetStreamCollector) Describe(ch chan<- *prometheus.Desc) {
-	for _, d := range []*prometheus.Desc{c.pending, c.ackPending, c.redelivered, c.dlq, c.up, c.bytes, c.maxBytes} {
+	for _, d := range []*prometheus.Desc{c.pending, c.ackPending, c.redelivered, c.expired, c.dlq, c.up, c.bytes, c.maxBytes} {
 		ch <- d
 	}
 }
 
 func (c *JetStreamCollector) Collect(ch chan<- prometheus.Metric) {
 	up := 1.0
+	var firstSeq uint64
 	if info, err := c.js.StreamInfo(c.stream); err == nil {
+		firstSeq = info.State.FirstSeq
 		ch <- prometheus.MustNewConstMetric(c.bytes, prometheus.GaugeValue, float64(info.State.Bytes), c.stream)
 		if info.Config.MaxBytes > 0 {
 			ch <- prometheus.MustNewConstMetric(c.maxBytes, prometheus.GaugeValue, float64(info.Config.MaxBytes), c.stream)
@@ -57,6 +74,9 @@ func (c *JetStreamCollector) Collect(ch chan<- prometheus.Metric) {
 		ch <- prometheus.MustNewConstMetric(c.pending, prometheus.GaugeValue, float64(info.NumPending), c.stream, name)
 		ch <- prometheus.MustNewConstMetric(c.ackPending, prometheus.GaugeValue, float64(info.NumAckPending), c.stream, name)
 		ch <- prometheus.MustNewConstMetric(c.redelivered, prometheus.GaugeValue, float64(info.NumRedelivered), c.stream, name)
+		if up == 1 {
+			ch <- prometheus.MustNewConstMetric(c.expired, prometheus.GaugeValue, float64(expiredUnacked(firstSeq, info)), c.stream, name)
+		}
 	}
 	for _, filter := range DLQSubjectFilters {
 		info, err := c.js.StreamInfo(c.stream, &nats.StreamInfoRequest{SubjectsFilter: filter})

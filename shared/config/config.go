@@ -28,10 +28,15 @@ type NATS struct {
 	MaxPublishRetry  int
 	PublishRetryWait time.Duration
 
-	// Stream limits applied when the stream is created, or filled in when an
-	// existing stream has none set. Zero means "use the package default".
+	// Webhook stream limits. Set (non-zero) values are enforced on the existing
+	// stream too; zero means "package default, only filled in where unset".
 	StreamMaxAge   time.Duration
 	StreamMaxBytes int64
+	// BroadcastStreamMaxAge works like StreamMaxAge for the BROADCAST stream.
+	BroadcastStreamMaxAge time.Duration
+	// StreamReplicas is applied to every stream when > 0 (3 on a 3-node cluster, ADR 0009).
+	// Zero leaves replicas as they are.
+	StreamReplicas int
 
 	// Consumer redelivery policy. Zero means "use the package default".
 	ConsumerMaxDeliver int
@@ -70,11 +75,13 @@ func LoadNATS() NATS {
 		MaxPublishRetry:  getEnvInt("NATS_PUBLISH_MAX_RETRIES", 3),
 		PublishRetryWait: getEnvDuration("NATS_PUBLISH_RETRY_WAIT", 200*time.Millisecond),
 
-		StreamMaxAge:       getEnvDuration("NATS_STREAM_MAX_AGE", 0),
-		StreamMaxBytes:     getEnvInt64("NATS_STREAM_MAX_BYTES", 0),
-		ConsumerMaxDeliver: getEnvInt("NATS_CONSUMER_MAX_DELIVER", 0),
-		RetryBaseDelay:     getEnvDuration("NATS_RETRY_BASE_DELAY", 0),
-		RetryMaxDelay:      getEnvDuration("NATS_RETRY_MAX_DELAY", 0),
+		StreamMaxAge:          getEnvDuration("NATS_STREAM_MAX_AGE", 0),
+		StreamMaxBytes:        getEnvInt64("NATS_STREAM_MAX_BYTES", 0),
+		BroadcastStreamMaxAge: getEnvDuration("NATS_BROADCAST_STREAM_MAX_AGE", 0),
+		StreamReplicas:        getEnvInt("NATS_STREAM_REPLICAS", 0),
+		ConsumerMaxDeliver:    getEnvInt("NATS_CONSUMER_MAX_DELIVER", 0),
+		RetryBaseDelay:        getEnvDuration("NATS_RETRY_BASE_DELAY", 0),
+		RetryMaxDelay:         getEnvDuration("NATS_RETRY_MAX_DELAY", 0),
 	}
 }
 

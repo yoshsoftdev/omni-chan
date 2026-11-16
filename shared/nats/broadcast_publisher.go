@@ -44,29 +44,11 @@ func NewBroadcastPublisher(conn *nats.Conn, cfg sharedconfig.NATS, streamName st
 	if p.retryWait <= 0 {
 		p.retryWait = 200 * time.Millisecond
 	}
-	if err := p.ensureStream(); err != nil {
+	// EnsureStream only creates on "not found", so a transient error never races a create (D5).
+	if err := EnsureStream(js, BroadcastStreamSpec(cfg, streamName), log); err != nil {
 		return nil, err
 	}
 	return p, nil
-}
-
-func (p *BroadcastPublisher) ensureStream() error {
-	_, err := p.js.StreamInfo(p.streamName)
-	if err == nil {
-		return nil
-	}
-	_, err = p.js.AddStream(&nats.StreamConfig{
-		Name:      p.streamName,
-		Subjects:  []string{"broadcast.>"},
-		Retention: nats.LimitsPolicy,
-		Storage:   nats.FileStorage,
-		MaxAge:    7 * 24 * time.Hour,
-	})
-	if err != nil {
-		return fmt.Errorf("create stream %s: %w", p.streamName, err)
-	}
-	p.log.Info("created jetstream", "stream", p.streamName)
-	return nil
 }
 
 // PublishJSON publishes a JSON payload to a broadcast subject.

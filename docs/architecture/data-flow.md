@@ -139,7 +139,7 @@ sequenceDiagram
   Note over M,P: status webhook → consumer → campaign/delivery tracker (korelasi wamid) → counter + realtime
 ```
 
-Pola **transactional outbox** sudah dipakai di jalur ini. Pertahankan pola ini saat migrasi ke Kafka.
+Pola **transactional outbox** sudah dipakai di jalur ini. Pertahankan pola ini (juga bila event bus diganti kelak, lihat ADR 0009).
 
 ## 5. Alur lain
 
@@ -179,7 +179,7 @@ Pola **transactional outbox** sudah dipakai di jalur ini. Pertahankan pola ini s
 ```mermaid
 flowchart LR
   Meta --> WH[webhook-service]
-  WH -->|produce, key=team_id:conversation| BUS[(Event bus<br/>Kafka)]
+  WH -->|publish, Nats-Msg-Id| BUS[(NATS JetStream<br/>3 node, Replicas 3)]
   BUS --> CONS[cmd/event-consumer]
   CONS --> PG[(Postgres<br/>dedup wamid unik)]
   CONS --> FAN[realtime fanout]
@@ -199,4 +199,4 @@ Perubahan kunci:
 - ✅ `cmd/api` dipecah menjadi `api` (HTTP + WS), `event-consumer`, dan `scheduler` (job singleton dengan leader lock) — 6.3.
 - Dedup final di Postgres, bukan di Redis.
 - Trace context ikut di header event.
-- Event bus di belakang interface sehingga NATS → Kafka bisa diganti per stream.
+- ✅ Event bus tetap NATS JetStream ([ADR 0009](../adr/0009-event-bus.md)): cluster 3 node, stream `Replicas: 3`, event yang kedaluwarsa sebelum diproses terpantau (alert `EventsLostBeforeProcessing`). Lihat [runbook](../runbooks/nats-cluster.md).

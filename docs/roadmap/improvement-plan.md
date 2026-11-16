@@ -143,11 +143,11 @@ Kerjakan per modul, satu PR per modul, memakai design system fase 5:
 Keputusan [ADR 0009](../adr/0009-event-bus.md) (2026-11-16): **tetap di NATS**, tidak migrasi ke Kafka. Kafka dibuka lagi hanya bila pemicu di ADR terpenuhi (konsumen di luar platform/CDC, retensi > ~30 hari, > ~10k event/detik).
 
 - [x] 8.1 ADR event bus — ADR 0009, Accepted
-- [ ] 8.2 Stream `BROADCAST` dikelola `EnsureStream` (bukan create-on-any-error); retensi & replika per stream dari konfigurasi dan diterapkan ke stream yang sudah ada
-- [ ] 8.3 NATS 3 node (cluster JetStream) di compose & panduan deploy; stream `Replicas: 3`
-- [ ] 8.4 Uji failover: satu node mati, publish & consume tetap jalan tanpa event hilang
-- [ ] 8.5 Rekonsiliasi count harian (webhook masuk vs pesan tersimpan) sebagai metrik + alert
-- [ ] 8.6 Update dokumen (tech stack S9, alur data, `domain/events/*`, PRD pertanyaan 3)
+- [x] 8.2 Stream `BROADCAST` dikelola `EnsureStream` (bukan create-on-any-error); retensi & replika per stream dari konfigurasi dan diterapkan ke stream yang sudah ada
+- [x] 8.3 NATS 3 node (cluster JetStream) di compose & panduan deploy; stream `Replicas: 3`
+- [x] 8.4 Uji failover: satu node mati, publish & consume tetap jalan tanpa event hilang
+- [x] 8.5 Rekonsiliasi count harian (webhook masuk vs pesan tersimpan) sebagai metrik + alert
+- [x] 8.6 Update dokumen (tech stack S9, alur data, `domain/events/*`, PRD pertanyaan 3)
 - ~~Abstraksi `shared/eventbus`, desain topic Kafka, infra Kafka, dual-publish, hapus NATS~~ — dibatalkan oleh ADR 0009.
 - DoD fase: kehilangan satu node NATS tidak menghentikan ingest/broadcast dan tidak menghilangkan event (dibuktikan test), lag & rekonsiliasi terpantau.
 

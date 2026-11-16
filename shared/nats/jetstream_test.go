@@ -146,6 +146,49 @@ func TestEnsureStream_KeepsOperatorMaxAge(t *testing.T) {
 	}
 }
 
+// A retention set in config (not the default) is applied to an existing stream, so it
+// can change without recreating the stream (ADR 0009).
+func TestEnsureStream_EnforcesConfiguredMaxAge(t *testing.T) {
+	nc := startJetStream(t)
+	js, _ := nc.JetStream()
+	if _, err := js.AddStream(&nats.StreamConfig{
+		Name: "WEBHOOK_EVENTS", Subjects: WebhookStreamSubjects, MaxAge: time.Hour,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	cfg := testNATSConfig("WEBHOOK_EVENTS")
+	cfg.StreamMaxAge = 30 * 24 * time.Hour
+	if err := EnsureStream(js, WebhookStreamSpec(cfg), quietLog()); err != nil {
+		t.Fatal(err)
+	}
+	info, _ := js.StreamInfo("WEBHOOK_EVENTS")
+	if info.Config.MaxAge != cfg.StreamMaxAge {
+		t.Errorf("MaxAge = %v, want configured %v", info.Config.MaxAge, cfg.StreamMaxAge)
+	}
+}
+
+// The broadcast stream goes through EnsureStream: created with its own retention,
+// and a transient error is not mistaken for "missing" (it used to create on any error).
+func TestBroadcastPublisher_EnsuresStreamFromConfig(t *testing.T) {
+	nc := startJetStream(t)
+	cfg := testNATSConfig("WEBHOOK_EVENTS")
+	cfg.BroadcastStreamMaxAge = 3 * 24 * time.Hour
+	if _, err := NewBroadcastPublisher(nc, cfg, "BROADCAST", quietLog()); err != nil {
+		t.Fatal(err)
+	}
+	js, _ := nc.JetStream()
+	info, err := js.StreamInfo("BROADCAST")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.Config.MaxAge != cfg.BroadcastStreamMaxAge || info.Config.Subjects[0] != "broadcast.>" {
+		t.Errorf("broadcast stream config = %+v", info.Config)
+	}
+	if info.Config.Duplicates != DefaultDuplicateWindow {
+		t.Errorf("Duplicates = %v", info.Config.Duplicates)
+	}
+}
+
 type failingStreamAPI struct{ addCalls int }
 
 func (f *failingStreamAPI) StreamInfo(string, ...nats.JSOpt) (*nats.StreamInfo, error) {
@@ -351,4 +394,61 @@ func waitStable(counter *atomic.Int64, quiet, timeout time.Duration) int64 {
 		}
 	}
 	return counter.Load()
+}
+
+// 8.5: events dropped by retention before the consumer acked them are reported, and the
+// gauge is zero for a consumer that is caught up.
+func TestJetStreamCollectorReportsExpiredUnackedMessages(t *testing.T) {
+	nc := startJetStream(t)
+	js, _ := nc.JetStream()
+	if _, err := js.AddStream(&nats.StreamConfig{Name: "WEBHOOK_EVENTS", Subjects: WebhookStreamSubjects, MaxMsgs: 2}); err != nil {
+		t.Fatal(err)
+	}
+	for _, durable := range []string{"slow", "caught-up"} {
+		if _, err := js.AddConsumer("WEBHOOK_EVENTS", &nats.ConsumerConfig{Durable: durable, FilterSubject: "meta.>", AckPolicy: nats.AckExplicitPolicy}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// 5 messages into a stream that keeps 2: sequences 1-3 are discarded unprocessed.
+	for i := 0; i < 5; i++ {
+		if _, err := js.Publish("meta.message.received", []byte(`{}`)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	sub, err := js.PullSubscribe("meta.>", "caught-up", nats.BindStream("WEBHOOK_EVENTS"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	msgs, err := sub.Fetch(2, nats.MaxWait(2*time.Second))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, m := range msgs {
+		if err := m.AckSync(); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	reg := prometheus.NewRegistry()
+	reg.MustRegister(NewJetStreamCollector(js, "WEBHOOK_EVENTS", "slow", "caught-up"))
+	families, err := reg.Gather()
+	if err != nil {
+		t.Fatal(err)
+	}
+	expired := map[string]float64{}
+	for _, f := range families {
+		if f.GetName() != "jetstream_consumer_expired_unacked_messages" {
+			continue
+		}
+		for _, m := range f.GetMetric() {
+			for _, l := range m.GetLabel() {
+				if l.GetName() == "consumer" {
+					expired[l.GetValue()] = m.GetGauge().GetValue()
+				}
+			}
+		}
+	}
+	if expired["slow"] != 3 || expired["caught-up"] != 0 {
+		t.Fatalf("expired unacked = %v, want slow=3 caught-up=0", expired)
+	}
 }

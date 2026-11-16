@@ -1,3 +1,15 @@
+x-nats-node: &nats-node
+  image: nats:2.10-alpine
+  expose:
+    - "4222"
+    - "6222"
+    - "8222"
+  healthcheck:
+    test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8222/healthz"]
+    interval: 5s
+    timeout: 5s
+    retries: 20
+
 # Shared by every backend role (api, event-consumer, scheduler).
 x-backend-env: &backend-env
     APP_ENV: production
@@ -5,8 +17,9 @@ x-backend-env: &backend-env
     DATABASE_URL: postgres://postgres:postgres@postgres:5432/omni_chan?sslmode=disable
     REDIS_URL: redis://redis:6379/0
     STORAGE_SERVICE_URL: http://storage-service:8082
-    NATS_URL: nats://nats:4222
+    NATS_URL: nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222
     NATS_STREAM_NAME: WEBHOOK_EVENTS
+    NATS_STREAM_REPLICAS: "3"
     NATS_CONSUMER_ENABLED: "true"
     INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-change-me-internal-token}
     MEDIA_TOKEN_SECRET: ${MEDIA_TOKEN_SECRET}
@@ -49,17 +62,25 @@ services:
       timeout: 5s
       retries: 20
 
-  nats:
-    image: nats:2.10-alpine
-    command: ["-js", "-m", "8222"]
-    expose:
-      - "4222"
-      - "8222"
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8222/healthz"]
-      interval: 5s
-      timeout: 5s
-      retries: 20
+  # NATS JetStream, 3-node cluster (ADR 0009): streams use Replicas 3, so losing one node
+  # neither stops ingest/broadcast nor loses acknowledged events.
+  nats-1:
+    <<: *nats-node
+    command: ["--name", "nats-1", "-js", "-sd", "/data", "-m", "8222", "--cluster_name", "omni", "--cluster", "nats://0.0.0.0:6222", "--routes", "nats://nats-1:6222,nats://nats-2:6222,nats://nats-3:6222"]
+    volumes:
+      - nats-1-data:/data
+
+  nats-2:
+    <<: *nats-node
+    command: ["--name", "nats-2", "-js", "-sd", "/data", "-m", "8222", "--cluster_name", "omni", "--cluster", "nats://0.0.0.0:6222", "--routes", "nats://nats-1:6222,nats://nats-2:6222,nats://nats-3:6222"]
+    volumes:
+      - nats-2-data:/data
+
+  nats-3:
+    <<: *nats-node
+    command: ["--name", "nats-3", "-js", "-sd", "/data", "-m", "8222", "--cluster_name", "omni", "--cluster", "nats://0.0.0.0:6222", "--routes", "nats://nats-1:6222,nats://nats-2:6222,nats://nats-3:6222"]
+    volumes:
+      - nats-3-data:/data
 
   webhook-service:
     build:
@@ -70,8 +91,9 @@ services:
     environment:
       APP_ENV: production
       HTTP_PORT: 8081
-      NATS_URL: nats://nats:4222
+      NATS_URL: nats://nats-1:4222,nats://nats-2:4222,nats://nats-3:4222
       NATS_STREAM_NAME: WEBHOOK_EVENTS
+      NATS_STREAM_REPLICAS: "3"
       INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-change-me-internal-token}
       MEDIA_TOKEN_SECRET: ${MEDIA_TOKEN_SECRET}
       MEDIA_BACKEND_URL: http://backend-service:8090
@@ -88,7 +110,11 @@ services:
       retries: 6
       start_period: 10s
     depends_on:
-      nats:
+      nats-1:
+        condition: service_healthy
+      nats-2:
+        condition: service_healthy
+      nats-3:
         condition: service_healthy
 
   backend-service:
@@ -112,7 +138,11 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      nats:
+      nats-1:
+        condition: service_healthy
+      nats-2:
+        condition: service_healthy
+      nats-3:
         condition: service_healthy
 
   backend-event-consumer:
@@ -192,4 +222,7 @@ services:
 
 volumes:
   postgres_data:
+  nats-1-data:
+  nats-2-data:
+  nats-3-data:
   storage_data:

@@ -24,9 +24,9 @@ _Terakhir diperbarui: 2026-11-16_
 | 5 | Design system | 6 / 6 |
 | 6 | Integritas data & pemecahan proses | 6 / 6 |
 | 7 | UI/UX revamp | 6 / 7 |
-| 8 | Pengerasan NATS | 1 / 6 |
+| 8 | Pengerasan NATS | 6 / 6 ✅ |
 | 9 | Fitur R3 | 0 / 5 |
-| **Total** | | **49 / 65** |
+| **Total** | | **54 / 65** |
 
 ## Perlu tindakan manual (pemilik repo)
 
@@ -171,11 +171,12 @@ _Terakhir diperbarui: 2026-11-16_
 ## Fase 8 — Pengerasan NATS (keputusan: tetap NATS, [ADR 0009](adr/0009-event-bus.md))
 
 - [x] **8.1** ADR event bus — [ADR 0009](adr/0009-event-bus.md) Accepted 2026-11-16: tetap NATS JetStream, Kafka hanya bila pemicu di ADR terpenuhi
-- [ ] **8.2** Stream `BROADCAST` lewat `EnsureStream`; retensi & replika per stream dari konfigurasi
-- [ ] **8.3** NATS 3 node (cluster) di compose & deploy; stream `Replicas: 3`
-- [ ] **8.4** Uji failover satu node mati tanpa event hilang
-- [ ] **8.5** Rekonsiliasi count harian + alert
-- [ ] **8.6** Update dokumen (tech stack, alur data, events, PRD Q3)
+- [x] **8.2** Stream `BROADCAST` lewat `EnsureStream` (dulu membuat stream pada error apa pun, bug D5 yang sama); retensi & replika per stream dari konfigurasi (`NATS_STREAM_MAX_AGE`, `NATS_BROADCAST_STREAM_MAX_AGE`, `NATS_STREAM_REPLICAS`) dan kini diterapkan ke stream yang sudah ada. Backend dulu mengabaikan env ini (`sharedconfig.NATS` dibangun manual) — `backend@c255fa5`, `shared/nats/stream.go`
+- [x] **8.3** NATS 3 node: `docker-compose.yml` (`nats-1..3`, volume per node, `NATS_STREAM_REPLICAS=3`), `deploy/nats/` (config tervalidasi `nats-server -t`, unit systemd lame-duck), [runbook](runbooks/nats-cluster.md) termasuk migrasi dari node tunggal
+- [x] **8.4** Uji failover: `shared/nats/cluster_test.go` (cluster 3 node in-process: leader dimatikan, 100/100 pesan terbaca tepat sekali; replika dinaikkan 1 → 3 pada stream yang ada). Dicek juga di cluster compose: leader dihentikan, 40/40 pesan tersimpan, node kembali dan tersinkron (lag 0)
+- [x] **8.5** Rekonsiliasi: metrik `jetstream_consumer_expired_unacked_messages` (event yang terhapus retensi sebelum di-ack consumer — tepat per event, lebih akurat dari selisih count harian yang terganggu retry Meta & dedup) + alert kritis `EventsLostBeforeProcessing` (lolos promtool). Bersama alert lag & DLQ yang sudah ada
+- [x] **8.6** Dokumen: tech stack S9, alur data §7, `domain/events/nats-subjects.md`, PRD pertanyaan 3 dijawab
+- Gerbang: `go test -race` semua modul + integration hijau, coverage shared 63 % / backend 24 % (≥ batas CI), OpenAPI 176/176
 
 ## Fase 9 — Fitur R3
 

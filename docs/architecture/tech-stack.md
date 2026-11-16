@@ -75,7 +75,7 @@
 | Go + Postgres + modular monolith | **Pertahankan** | Cocok untuk skala saat ini; pemisahan binary (api/orchestrator/worker) sudah tepat |
 | Fiber v2 | Pertahankan dulu | fasthttp tidak kompatibel dengan `net/http`, sehingga integrasi OpenTelemetry/middleware standar lebih repot. Evaluasi ulang saat fase monitoring |
 | SQL tulis tangan | Perbaiki | Rawan drift skema ↔ struct; `sqlc` di atas pgx memberi type-safety tanpa ORM |
-| NATS JetStream | Masalah ada di **konfigurasi**, bukan engine | Lihat [alur data §6](data-flow.md#6-risiko-per-alur). Tim memutuskan migrasi ke Kafka (fase 8 roadmap) |
+| NATS JetStream | Masalah ada di **konfigurasi**, bukan engine | Lihat [alur data §6](data-flow.md#6-risiko-per-alur). Tetap dipakai ([ADR 0009](../adr/0009-event-bus.md)); kini cluster 3 node |
 | Redis | Pertahankan | Rate limiter & koordinasi memang cocok di Redis. Idempotensi sebaiknya tidak diam-diam fallback ke memory di production |
 | Frontend stack | Pertahankan, lengkapi | Belum ada design system (hanya 3 komponen UI); DTO ditulis tangan padahal ada OpenAPI |
 
@@ -91,10 +91,9 @@
 | S6 ✅ | Kontrak API FE | `docs/openapi/v1.yaml` lengkap (174/174, dijaga CI) → tipe `schema.gen.ts` (`pnpm gen:api`); modul FE pindah ke tipe ini saat disentuh | 6 |
 | S7 | Design system | 3 komponen → shadcn/ui (Radix) + token dari `ui-design.mdc` + Storybook | 5 |
 | S8 ✅ | Package manager FE | npm + pnpm → **pnpm saja** | 0 |
-| S9 | Event bus | NATS JetStream → **Apache Kafka** (atau Redpanda, kompatibel API Kafka) lewat abstraksi `EventBus` | 8 |
+| S9 ✅ | Event bus | **Tetap NATS JetStream** ([ADR 0009](../adr/0009-event-bus.md)): cluster 3 node, `Replicas: 3`, retensi per stream dari konfigurasi | 8 |
 | S10 | Partisi Postgres | partisi DEFAULT saja → partisi bulanan dengan `pg_partman` + tabel dedup `wamid` | 6 |
 
-### Catatan S9 (Kafka)
-- **Keuntungan:** retensi & replay panjang, ekosistem (Kafka Connect, CDC/Debezium, stream processing), ordering per partition key (misal `team_id:conversation_id`).
-- **Biaya:** operasional lebih berat dari NATS (broker + KRaft, tuning partisi, consumer group rebalancing); butuh monitoring consumer lag sebelum migrasi.
-- **Syarat sebelum mulai:** abstraksi `EventBus` di `shared/`, idempotensi berbasis DB, monitoring (fase 4) sudah aktif. Keputusan dicatat sebagai ADR-0008.
+### Catatan S9 (event bus)
+- **Keputusan 2026-11-16:** tetap NATS JetStream, tidak migrasi ke Kafka. Alasannya: semua masalah NATS di fase 0 berasal dari konfigurasi, dedup kini di Postgres, dan tidak ada kebutuhan yang hanya dipenuhi Kafka. Risiko nyata (satu node) diatasi dengan cluster 3 node.
+- **Pemicu membuka lagi Kafka:** konsumen di luar platform / CDC, retensi > ~30 hari, atau > ~10k event/detik. Detail di ADR 0009.

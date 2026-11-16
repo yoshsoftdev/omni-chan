@@ -22,6 +22,13 @@ groups:
         annotations:
           summary: "Consumer {{ $labels.consumer }} is {{ $value }} messages behind"
 
+      - alert: EventsLostBeforeProcessing
+        # ADR 0009 / 8.5: stream retention removed events this consumer had not acknowledged.
+        expr: max by (stream, consumer) (jetstream_consumer_expired_unacked_messages) > 0
+        labels: { severity: critical }
+        annotations:
+          summary: "{{ $value }} event(s) on {{ $labels.stream }} expired before {{ $labels.consumer }} processed them; check lag and raise NATS_STREAM_MAX_AGE"
+
       - alert: EventBusUnreadable
         expr: jetstream_up == 0
         for: 5m

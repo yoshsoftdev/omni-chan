@@ -106,5 +106,5 @@ Rincian per modul beserta status implementasi ada di **[features.md](features.md
 ## 10. Pertanyaan terbuka
 1. Apakah Telegram masuk lingkup v1? Saat ini baru ada normalizer, belum ada alur end-to-end.
 2. Target angka di §4 dan model harga (mempengaruhi `quota`/`planlimits`).
-3. Apakah migrasi ke Kafka didorong kebutuhan nyata (retensi panjang, replay, integrasi data) atau preferensi tim? Lihat roadmap fase 8.
+3. ~~Apakah migrasi ke Kafka didorong kebutuhan nyata?~~ **Terjawab 2026-11-16:** tidak ada kebutuhan saat ini; tetap NATS ([ADR 0009](../adr/0009-event-bus.md)).
 4. Siapa pemilik design system dan apakah ada desain Figma sebagai acuan?

@@ -1,0 +1,17 @@
+[Unit]
+Description=NATS JetStream cluster node (Omni-Chan event bus, ADR 0009)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=nats
+ExecStart=/usr/local/bin/nats-server -c /etc/nats/nats-server.conf
+ExecReload=/bin/kill -HUP $MAINPID
+# Lame-duck mode on stop: clients move to another node before this one exits.
+KillSignal=SIGUSR2
+TimeoutStopSec=60
+Restart=on-failure
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
