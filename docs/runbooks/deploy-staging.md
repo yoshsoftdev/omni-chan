@@ -19,6 +19,36 @@ laptop / GitHub Actions ── build + push ──► ghcr.io/yoshsoftdev/omni-c
 
 Semua port hanya di 127.0.0.1. Yang terbuka ke internet hanya nginx (80/443) dan SSH.
 
+## 0. Staging lokal + E2E (tanpa VM)
+
+Stack yang sama, dijalankan di mesin ini (compose project `omni-staging`, volume terpisah dari dev):
+
+```bash
+cp .env.staging.example .env          # isi secret; tambah POSTGRES_PUBLISH_PORT=15432 / REDIS_PUBLISH_PORT=16379 kalau 5432/6379 dipakai
+./deploy/deploy-staging.sh local      # build image + up --wait, tanpa registry
+./deploy/e2e-staging.sh               # E2E nyata (tanpa mock): frontend/e2e-stack
+cd frontend && E2E_BASE_URL=http://127.0.0.1:8095 pnpm test:e2e   # suite mock terhadap build produksi
+```
+
+Mode `local` otomatis menambahkan `docker-compose.e2e.yml`: **fake Meta Graph** (`deploy/docker/fake-graph.mjs`, port 127.0.0.1:8099) dan `META_GRAPH_BASE_URL` di semua role backend. Dengan begitu channel bisa dibuat dan balasan "terkirim" tanpa kredensial Meta. Backend **menolak** `META_GRAPH_BASE_URL` saat `APP_ENV=production`, dan VM tidak pernah memakai overlay ini. `E2E=0` mematikannya.
+
+Yang dicek `e2e-staging.sh` (tiap test membuat team sendiri):
+
+| Test | Jalur yang dilewati |
+|---|---|
+| login akun nyata / password salah | UI → Next proxy → backend → Postgres |
+| connect channel WhatsApp lewat UI | UI → backend → verifikasi ke Graph (fake) → channel `connected` |
+| token Meta kedaluwarsa ditolak | backend → Graph 401 → 400 ke klien |
+| inbound WhatsApp sampai inbox | webhook (signature Meta) → NATS → event-consumer → Postgres → API → UI |
+| pesan masuk saat thread terbuka | + WebSocket lewat Next `/ws` |
+| signature palsu ditolak | webhook 401, tidak ada data |
+| Meta kirim ulang wamid sama | tidak ada duplikat |
+| balasan agent dari inbox | UI → backend → Graph (isi yang diterima Meta dicek) → tersimpan outbound |
+
+Konvensi fake Graph: WABA `w<pnid>` memiliki phone `<pnid>`, token `bad-token` = kedaluwarsa, `GET :8099/_sent?to=<wa_id>` = pesan yang diterima "Meta".
+
+Report: `frontend/playwright-report-stack/index.html`. Debug pakai `./dc logs -f <service>` di root repo. Matikan dengan `./dc down` (`-v` untuk hapus data).
+
 ## 1. Siapkan VM (sekali)
 
 ```bash

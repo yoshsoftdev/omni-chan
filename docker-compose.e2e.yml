@@ -1,0 +1,34 @@
+# E2E overlay: points every backend role at a fake Meta Graph API (deploy/docker/fake-graph.mjs)
+# so channels can be created and replies "sent" without real Meta credentials.
+# Used by `./deploy/deploy-staging.sh local` (E2E=1, the default there). Never on a real VM:
+# the backend refuses META_GRAPH_BASE_URL when APP_ENV=production.
+
+x-fake-graph-env: &fake-graph-env
+  META_GRAPH_BASE_URL: http://fake-graph:8080
+
+services:
+  fake-graph:
+    image: node:22-alpine
+    command: ["node", "/app/fake-graph.mjs"]
+    volumes:
+      - ./deploy/docker/fake-graph.mjs:/app/fake-graph.mjs:ro
+    ports: ["127.0.0.1:8099:8080"] # tests read GET /_sent
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend-service:
+    environment: *fake-graph-env
+    depends_on:
+      fake-graph:
+        condition: service_healthy
+  backend-event-consumer:
+    environment: *fake-graph-env
+  backend-scheduler:
+    environment: *fake-graph-env
+  broadcast-orchestrator:
+    environment: *fake-graph-env
+  broadcast-worker:
+    environment: *fake-graph-env
