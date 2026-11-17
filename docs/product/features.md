@@ -96,8 +96,8 @@ Cara update: ubah status di tabel ini dalam PR yang sama dengan perubahan kodeny
 | ID | Fitur | Status | Catatan |
 |---|---|---|---|
 | REP-01 | Dashboard workspace | 🟡 | Saat ini hanya readiness, belum ada metrik percakapan |
-| REP-02 | Analitik inbox (volume, FRT, resolusi) | ⬜ | R3 |
-| REP-03 | Laporan performa agent | ⬜ | R3 |
+| REP-02 | Analitik inbox (volume, FRT, resolusi) | ✅ | `reports/inbox` — `internal/report` (`GET /reports/inbox`) |
+| REP-03 | Laporan performa agent | ✅ | `reports/inbox` (tabel Agents) |
 
 ## R3 — Otomasi percakapan
 | ID | Fitur | Status |

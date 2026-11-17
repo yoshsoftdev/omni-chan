@@ -73,7 +73,7 @@ Rincian per modul beserta status implementasi ada di **[features.md](features.md
 | F-BCAST | Broadcast | Template → audience → mapping variabel → jadwal → kirim bertahap dengan rate limit → laporan status per penerima |
 | F-AUTO | Automation | Endpoint per use-case, API key ber-scope, invoke publik lewat webhook-service, forward `message.received` ke URL pelanggan |
 | F-MEDIA | Media | Upload, penyimpanan (local/MinIO), token media berumur pendek untuk Meta |
-| F-REPORT | Laporan & Analitik | Laporan kampanye (ada); analitik inbox & laporan agent (**belum**) |
+| F-REPORT | Laporan & Analitik | Laporan kampanye, analitik inbox & laporan agent |
 
 ## 7. Kebutuhan non-fungsional
 
@@ -100,7 +100,7 @@ Rincian per modul beserta status implementasi ada di **[features.md](features.md
 | R1 | Auth, Team, Channel, Realtime Inbox | Sebagian besar selesai |
 | R2 | Kontak, Broadcast, Template | Selesai, ada bug terbuka |
 | R2.5 | Automation API, OTP, Instagram | Selesai, perlu hardening |
-| R3 | Keyword reply, welcome message, analitik, laporan agent | Belum mulai |
+| R3 | Keyword reply, welcome message, analitik, laporan agent | Selesai (2026-11-17); RBAC merata juga selesai |
 | R4 | Billing & subscription | Ditunda |
 
 ## 10. Pertanyaan terbuka

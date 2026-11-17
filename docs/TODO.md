@@ -25,8 +25,8 @@ _Terakhir diperbarui: 2026-11-16_
 | 6 | Integritas data & pemecahan proses | 6 / 6 |
 | 7 | UI/UX revamp | 6 / 7 |
 | 8 | Pengerasan NATS | 6 / 6 ✅ |
-| 9 | Fitur R3 | 2 / 5 |
-| **Total** | | **56 / 65** |
+| 9 | Fitur R3 | 3 / 5 |
+| **Total** | | **57 / 65** |
 
 ## Perlu tindakan manual (pemilik repo)
 
@@ -191,6 +191,10 @@ _Terakhir diperbarui: 2026-11-16_
   - Balasan otomatis tidak dihitung sebagai respons manusia (first response, last agent message, waktu tunggu tidak berubah) — penting untuk 9.3.
   - API `GET/PUT /inbox/settings/welcome`, CRUD `/inbox/keyword-rules` (izin `automation.*`), migrasi `000055`, OpenAPI 182/182. Halaman Settings → Auto Reply (read-only tanpa izin), masuk audit axe.
   - **Default yang saya pilih (mohon dikonfirmasi PO):** welcome per tim (bukan per channel); keyword hanya untuk pesan teks; jeda 24 jam setelah agent membalas; balasan dikirim atas nama owner tim (pola sama dengan window recontact).
-- [ ] **9.3** Analitik inbox + laporan agent
+- [x] **9.3** Analitik inbox + laporan agent — `backend@a8c0c48`, `frontend@b2cdea4`
+  - `GET /reports/inbox` (izin `report.view`, ≤ 92 hari, zona waktu `tz`, filter channel): ringkasan (percakapan baru, pesan masuk, balasan agent, first response median & p90, resolved, median waktu resolusi, menunggu balasan pertama, open sekarang), seri harian, dan per agent (balasan, resolved, first response median, open di-assign).
+  - First response = dari pesan pertama pelanggan ke balasan **manusia** pertama; percakapan yang dimulai agent dan balasan otomatis (welcome/keyword/recontact) dikecualikan. Integration test memeriksa setiap angka pada inbox buatan.
+  - Halaman Inbox Reports (stat tile, grafik pesan per hari dengan tooltip & tampilan tabel, tabel agent), lolos audit axe.
+  - Batasan: percakapan yang dibuat > 30 hari sebelum rentang dilewati untuk first response (lihat komentar `shortcut:`); first response agent diatribusikan ke assignee saat ini.
 - [ ] **9.4** Telegram end-to-end (jika dikonfirmasi)
 - [ ] **9.5** Billing (jika masuk lingkup)
