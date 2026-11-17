@@ -1,0 +1,38 @@
+[Unit]
+Description=Omni-Chan Storage Service (127.0.0.1:8082, media objects)
+Documentation=https://github.com/omnichannel/omni-chan-v2
+After=network-online.target postgresql.service omni-chan-backend.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=omni-chan
+Group=omni-chan
+
+# Install layout (see deploy/install-services.sh):
+#   /opt/omni-chan-storage/bin/storage-service
+#   /opt/omni-chan-storage/.env          (HTTP_PORT=8082; migrations run after backend)
+#   /opt/omni-chan-storage/migrations/   (required at startup)
+#   /opt/omni-chan-storage/storage/
+WorkingDirectory=/opt/omni-chan-storage
+EnvironmentFile=-/opt/omni-chan-storage/.env
+ExecStart=/opt/omni-chan-storage/bin/storage-service
+
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=30s
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=omni-chan-storage
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/omni-chan-storage/storage
+
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

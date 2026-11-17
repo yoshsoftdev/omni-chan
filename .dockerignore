@@ -1,0 +1,17 @@
+# Build context is the repo root (docker-compose*.yml). Keep it small and secret-free.
+**/.git
+**/.env
+**/.env.local
+**/node_modules
+**/bin
+**/coverage
+**/test-results
+**/playwright-report
+**/*.log
+frontend/.next
+frontend/storybook-static
+frontend/visual
+graphify-out
+docs
+dump.rdb
+services/*/storage

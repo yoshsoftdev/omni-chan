@@ -187,6 +187,49 @@ services:
       backend-service:
         condition: service_healthy
 
+  broadcast-orchestrator:
+    # Expands broadcast jobs into batches (BROADCAST stream); safe to run more than one.
+    build:
+      context: .
+      dockerfile: services/backend-service/Dockerfile
+    command: ["./broadcast-orchestrator"]
+    expose:
+      - "9103" # /metrics /health /ready — internal only, never published
+    environment:
+      <<: *backend-env
+      METRICS_ADDR: ":9103"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:9103/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+    depends_on:
+      backend-service:
+        condition: service_healthy
+
+  broadcast-worker:
+    # Sends broadcast batches to Meta; scale replicas freely.
+    build:
+      context: .
+      dockerfile: services/backend-service/Dockerfile
+    command: ["./broadcast-worker"]
+    expose:
+      - "8091" # worker health
+      - "9102" # /metrics /health /ready — internal only, never published
+    environment:
+      <<: *backend-env
+      METRICS_ADDR: ":9102"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:9102/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+    depends_on:
+      backend-service:
+        condition: service_healthy
+
   storage-service:
     build:
       context: .

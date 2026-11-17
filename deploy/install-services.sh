@@ -3,7 +3,9 @@ set -euo pipefail
 
 # Build and install Omni-Chan systemd services:
 #   omni-chan-backend   → 127.0.0.0:8070  (REST API + WebSocket /ws)
-#   omni-chan-event-consumer, omni-chan-scheduler (backend workers, no HTTP)
+#   omni-chan-event-consumer, omni-chan-scheduler,
+#   omni-chan-broadcast-orchestrator, omni-chan-broadcast-worker (backend workers)
+#   omni-chan-storage   → 127.0.0.1:8082 (media objects)
 #   omni-chan-frontend  → 0.0.0.0:8095   (Next.js)
 #   omni-chan-webhook   → 0.0.0.0:8090   (Meta/Telegram webhooks)
 #
@@ -13,7 +15,7 @@ set -euo pipefail
 #   sudo ./deploy/install-services.sh --only frontend --no-start
 #
 # Options:
-#   --only NAME       backend | frontend | webhook (repeatable)
+#   --only NAME       backend | frontend | webhook | storage (repeatable)
 #   --no-start        Install only; do not enable/start
 #   --user NAME       Linux user (default: omni-chan)
 #   --skip-frontend-build  Copy files only; skip pnpm build
@@ -21,11 +23,14 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BACKEND_DIR="${ROOT_DIR}/services/backend-service"
 WEBHOOK_DIR="${ROOT_DIR}/services/webhook-service"
+STORAGE_DIR="${ROOT_DIR}/services/storage-service"
 FRONTEND_DIR="${ROOT_DIR}/frontend"
 
 BACKEND_INSTALL="/opt/omni-chan-backend"
 FRONTEND_INSTALL="/opt/omni-chan-frontend"
 WEBHOOK_INSTALL="/opt/omni-chan-webhook"
+STORAGE_INSTALL="/opt/omni-chan-storage"
+BACKEND_UNITS=(omni-chan-backend omni-chan-event-consumer omni-chan-scheduler omni-chan-broadcast-orchestrator omni-chan-broadcast-worker)
 
 RUN_USER="omni-chan"
 START_SERVICE=1
@@ -33,6 +38,7 @@ SKIP_FRONTEND_BUILD=0
 INSTALL_BACKEND=1
 INSTALL_FRONTEND=1
 INSTALL_WEBHOOK=1
+INSTALL_STORAGE=1
 ONLY_FLAG_USED=0
 
 while [[ $# -gt 0 ]]; do
@@ -42,14 +48,16 @@ while [[ $# -gt 0 ]]; do
         INSTALL_BACKEND=0
         INSTALL_FRONTEND=0
         INSTALL_WEBHOOK=0
+        INSTALL_STORAGE=0
         ONLY_FLAG_USED=1
       fi
       case "$2" in
         backend) INSTALL_BACKEND=1 ;;
         frontend) INSTALL_FRONTEND=1 ;;
         webhook) INSTALL_WEBHOOK=1 ;;
+        storage) INSTALL_STORAGE=1 ;;
         *)
-          echo "Unknown --only value: $2 (use backend, frontend, webhook)" >&2
+          echo "Unknown --only value: $2 (use backend, frontend, webhook, storage)" >&2
           exit 1
           ;;
       esac
@@ -177,6 +185,8 @@ install_backend() {
     GOWORK="${ROOT_DIR}/go.work" "${GO_BIN}" build -ldflags="-s -w" -o "${BACKEND_INSTALL}/bin/omni-chan-backend" ./cmd/api
     GOWORK="${ROOT_DIR}/go.work" "${GO_BIN}" build -ldflags="-s -w" -o "${BACKEND_INSTALL}/bin/omni-chan-event-consumer" ./cmd/event-consumer
     GOWORK="${ROOT_DIR}/go.work" "${GO_BIN}" build -ldflags="-s -w" -o "${BACKEND_INSTALL}/bin/omni-chan-scheduler" ./cmd/scheduler
+    GOWORK="${ROOT_DIR}/go.work" "${GO_BIN}" build -ldflags="-s -w" -o "${BACKEND_INSTALL}/bin/omni-chan-broadcast-orchestrator" ./cmd/broadcast-orchestrator
+    GOWORK="${ROOT_DIR}/go.work" "${GO_BIN}" build -ldflags="-s -w" -o "${BACKEND_INSTALL}/bin/omni-chan-broadcast-worker" ./cmd/broadcast-worker
   )
 
   echo "==> Installing backend migrations..."
@@ -188,7 +198,7 @@ install_backend() {
   fi
 
   local unit
-  for unit in omni-chan-backend omni-chan-event-consumer omni-chan-scheduler; do
+  for unit in "${BACKEND_UNITS[@]}"; do
     install -m 644 "${ROOT_DIR}/deploy/${unit}.service" "/etc/systemd/system/${unit}.service"
     sed -i "s/^User=.*/User=${RUN_USER}/" "/etc/systemd/system/${unit}.service"
     sed -i "s/^Group=.*/Group=${RUN_USER}/" "/etc/systemd/system/${unit}.service"
@@ -219,6 +229,33 @@ install_webhook() {
   sed -i "s/^User=.*/User=${RUN_USER}/" /etc/systemd/system/omni-chan-webhook.service
   sed -i "s/^Group=.*/Group=${RUN_USER}/" /etc/systemd/system/omni-chan-webhook.service
   chown -R "${RUN_USER}:${RUN_USER}" "${WEBHOOK_INSTALL}"
+}
+
+install_storage() {
+  local env_source="${STORAGE_DIR}/.env"
+  if [[ ! -f "${env_source}" ]]; then
+    echo "Storage .env not found: ${env_source}" >&2
+    exit 1
+  fi
+
+  echo "==> Building omni-chan-storage (8082)..."
+  mkdir -p "${STORAGE_INSTALL}/bin" "${STORAGE_INSTALL}/storage" "${STORAGE_INSTALL}/migrations"
+  (
+    cd "${STORAGE_DIR}"
+    GOWORK="${ROOT_DIR}/go.work" "${GO_BIN}" build -ldflags="-s -w" -o "${STORAGE_INSTALL}/bin/storage-service" ./cmd
+  )
+  rsync -a --delete "${STORAGE_DIR}/migrations/" "${STORAGE_INSTALL}/migrations/"
+
+  install -m 640 "${env_source}" "${STORAGE_INSTALL}/.env"
+  # The unit only allows writes under storage/ (ProtectSystem=strict).
+  if ! grep -Eq '^STORAGE_LOCAL_PATH=(\./storage|/opt/omni-chan-storage/storage)' "${STORAGE_INSTALL}/.env"; then
+    echo "WARN: set STORAGE_LOCAL_PATH=./storage in ${STORAGE_INSTALL}/.env"
+  fi
+
+  install -m 644 "${ROOT_DIR}/deploy/omni-chan-storage.service" /etc/systemd/system/omni-chan-storage.service
+  sed -i "s/^User=.*/User=${RUN_USER}/" /etc/systemd/system/omni-chan-storage.service
+  sed -i "s/^Group=.*/Group=${RUN_USER}/" /etc/systemd/system/omni-chan-storage.service
+  chown -R "${RUN_USER}:${RUN_USER}" "${STORAGE_INSTALL}"
 }
 
 install_frontend() {
@@ -257,17 +294,21 @@ install_frontend() {
 start_units() {
   systemctl daemon-reload
   if [[ "${START_SERVICE}" -eq 1 ]]; then
-    [[ "${INSTALL_WEBHOOK}" -eq 1 ]] && systemctl enable --now omni-chan-webhook
-    [[ "${INSTALL_BACKEND}" -eq 1 ]] && systemctl enable --now omni-chan-backend omni-chan-event-consumer omni-chan-scheduler
-    [[ "${INSTALL_FRONTEND}" -eq 1 ]] && systemctl enable --now omni-chan-frontend
+    # enable + restart: a redeploy must pick up the new binaries (enable --now alone won't).
+    local units=()
+    [[ "${INSTALL_WEBHOOK}" -eq 1 ]] && units+=(omni-chan-webhook)
+    [[ "${INSTALL_BACKEND}" -eq 1 ]] && units+=("${BACKEND_UNITS[@]}")
+    [[ "${INSTALL_STORAGE}" -eq 1 ]] && units+=(omni-chan-storage)
+    [[ "${INSTALL_FRONTEND}" -eq 1 ]] && units+=(omni-chan-frontend)
+    systemctl enable "${units[@]}"
+    systemctl restart "${units[@]}"
     echo ""
-    [[ "${INSTALL_WEBHOOK}" -eq 1 ]] && systemctl --no-pager status omni-chan-webhook || true
-    [[ "${INSTALL_BACKEND}" -eq 1 ]] && systemctl --no-pager status omni-chan-backend omni-chan-event-consumer omni-chan-scheduler || true
-    [[ "${INSTALL_FRONTEND}" -eq 1 ]] && systemctl --no-pager status omni-chan-frontend || true
+    systemctl --no-pager status "${units[@]}" || true
   else
     echo "Installed. Enable with:"
     [[ "${INSTALL_WEBHOOK}" -eq 1 ]] && echo "  systemctl enable --now omni-chan-webhook"
-    [[ "${INSTALL_BACKEND}" -eq 1 ]] && echo "  systemctl enable --now omni-chan-backend omni-chan-event-consumer omni-chan-scheduler"
+    [[ "${INSTALL_BACKEND}" -eq 1 ]] && echo "  systemctl enable --now ${BACKEND_UNITS[*]}"
+    [[ "${INSTALL_STORAGE}" -eq 1 ]] && echo "  systemctl enable --now omni-chan-storage"
     [[ "${INSTALL_FRONTEND}" -eq 1 ]] && echo "  systemctl enable --now omni-chan-frontend"
   fi
 }
@@ -275,6 +316,7 @@ start_units() {
 ensure_user
 [[ "${INSTALL_BACKEND}" -eq 1 ]] && install_backend
 [[ "${INSTALL_WEBHOOK}" -eq 1 ]] && install_webhook
+[[ "${INSTALL_STORAGE}" -eq 1 ]] && install_storage
 [[ "${INSTALL_FRONTEND}" -eq 1 ]] && install_frontend
 start_units
 
@@ -283,6 +325,7 @@ echo "Ports:"
 echo "  Backend (API + WebSocket /ws) : http://0.0.0.0:8070"
 echo "  Frontend                      : http://0.0.0.0:8095"
 echo "  Webhook (Meta ingress)        : http://0.0.0.0:8090"
+echo "  Storage (internal)            : http://127.0.0.1:8082"
 echo ""
 echo "Logs:"
 echo "  journalctl -u omni-chan-backend -f"

@@ -1,0 +1,51 @@
+# Build images, push to GHCR, deploy to the staging VM (deploy/deploy-staging.sh).
+# Triggers: push to branch `staging`, or "Run workflow" (any branch, optional existing tag = rollback).
+#
+# Secrets:  SUBMODULES_TOKEN (read the 4 submodule repos), STAGING_HOST (user@host),
+#           STAGING_SSH_KEY (private key for that user), STAGING_KNOWN_HOSTS (ssh-keyscan -H <host>)
+# Variable: NEXT_PUBLIC_WEBHOOK_URL (baked into the frontend bundle)
+name: staging
+
+on:
+  push:
+    branches: [staging]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Deploy an existing image tag (skip build), e.g. a previous sha"
+        required: false
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: staging-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+          token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
+
+      - name: Log in to GHCR
+        run: echo "${{ github.token }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: SSH key
+        run: |
+          install -m 700 -d ~/.ssh
+          echo "${{ secrets.STAGING_SSH_KEY }}" > ~/.ssh/id_ed25519 && chmod 600 ~/.ssh/id_ed25519
+          echo "${{ secrets.STAGING_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+
+      - name: Build, push, deploy
+        env:
+          STAGING_HOST: ${{ secrets.STAGING_HOST }}
+          NEXT_PUBLIC_WEBHOOK_URL: ${{ vars.NEXT_PUBLIC_WEBHOOK_URL }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          if [ -n "${TAG}" ]; then ./deploy/deploy-staging.sh deploy; else ./deploy/deploy-staging.sh all; fi

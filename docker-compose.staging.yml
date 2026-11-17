@@ -1,0 +1,103 @@
+# Staging overlay: prebuilt images from GHCR + frontend + debug ports.
+#   docker compose -f docker-compose.yml -f docker-compose.staging.yml [-f docker-compose.observability.yml] ...
+# Built and deployed by deploy/deploy-staging.sh (locally or from .github/workflows/staging.yml).
+#
+# Every published port binds to 127.0.0.1: nginx on the host fronts 8095/8070/8090, and the
+# debug ports (Postgres, Redis, NATS monitor, metrics) are reached over an SSH tunnel.
+
+x-backend-image: &backend-image
+  image: ${REGISTRY:-ghcr.io/yoshsoftdev}/omni-chan-backend:${TAG:-staging}
+
+x-staging-env: &staging-env
+  APP_ENV: ${APP_ENV:-staging}
+
+services:
+  postgres:
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports: ["127.0.0.1:5432:5432"]
+    restart: unless-stopped
+
+  redis:
+    ports: ["127.0.0.1:6379:6379"]
+    restart: unless-stopped
+
+  nats-1:
+    ports: ["127.0.0.1:8222:8222"] # JetStream monitor: /jsz?streams=1
+    restart: unless-stopped
+  nats-2:
+    restart: unless-stopped
+  nats-3:
+    restart: unless-stopped
+
+  backend-service:
+    <<: *backend-image
+    environment:
+      <<: *staging-env
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/omni_chan?sslmode=disable
+    ports:
+      - "127.0.0.1:8070:8090" # API + /ws (nginx)
+      - "127.0.0.1:9101:9101"
+    restart: unless-stopped
+
+  backend-event-consumer:
+    <<: *backend-image
+    environment:
+      <<: *staging-env
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/omni_chan?sslmode=disable
+    restart: unless-stopped
+
+  backend-scheduler:
+    <<: *backend-image
+    environment:
+      <<: *staging-env
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/omni_chan?sslmode=disable
+    restart: unless-stopped
+
+  broadcast-orchestrator:
+    <<: *backend-image
+    environment:
+      <<: *staging-env
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/omni_chan?sslmode=disable
+    restart: unless-stopped
+
+  broadcast-worker:
+    <<: *backend-image
+    environment:
+      <<: *staging-env
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/omni_chan?sslmode=disable
+    restart: unless-stopped
+
+  webhook-service:
+    image: ${REGISTRY:-ghcr.io/yoshsoftdev}/omni-chan-webhook:${TAG:-staging}
+    environment:
+      <<: *staging-env
+    ports: !override
+      - "127.0.0.1:8090:8081" # Meta/Telegram ingress (nginx)
+    restart: unless-stopped
+
+  storage-service:
+    image: ${REGISTRY:-ghcr.io/yoshsoftdev}/omni-chan-storage:${TAG:-staging}
+    environment:
+      <<: *staging-env
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/omni_chan?sslmode=disable
+    restart: unless-stopped
+
+  frontend:
+    image: ${REGISTRY:-ghcr.io/yoshsoftdev}/omni-chan-frontend:${TAG:-staging}
+    build:
+      context: .
+      dockerfile: deploy/docker/frontend.Dockerfile
+      args:
+        NEXT_PUBLIC_WEBHOOK_URL: ${NEXT_PUBLIC_WEBHOOK_URL:-}
+    ports: ["127.0.0.1:8095:3000"] # UI (nginx)
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    depends_on:
+      backend-service:
+        condition: service_healthy
+    restart: unless-stopped

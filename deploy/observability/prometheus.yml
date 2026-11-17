@@ -21,4 +21,7 @@ scrape_configs:
         labels: { service: webhook-service }
       - targets: ["storage-service:9105"]
         labels: { service: storage-service }
-      # Add when deployed: broadcast-worker:9102, broadcast-orchestrator:9103
+      - targets: ["broadcast-orchestrator:9103"]
+        labels: { service: broadcast-orchestrator }
+      - targets: ["broadcast-worker:9102"]
+        labels: { service: broadcast-worker }

@@ -1,0 +1,39 @@
+[Unit]
+Description=Omni-Chan Broadcast Send Worker (health 127.0.0.1:8091, metrics 127.0.0.1:9102)
+Documentation=https://github.com/omnichannel/omni-chan-v2
+After=network-online.target postgresql.service redis.service nats.service omni-chan-backend.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=omni-chan
+Group=omni-chan
+
+# Install layout (see deploy/install-services.sh):
+#   /opt/omni-chan-backend/bin/omni-chan-broadcast-worker   (health 127.0.0.1:8091, metrics 127.0.0.1:9102)
+#   /opt/omni-chan-backend/.env          (shared with omni-chan-backend)
+#   /opt/omni-chan-backend/migrations/   (required at startup)
+#   /opt/omni-chan-backend/storage/
+WorkingDirectory=/opt/omni-chan-backend
+EnvironmentFile=-/opt/omni-chan-backend/.env
+Environment=BROADCAST_WORKER_HTTP_ADDR=127.0.0.1:8091
+ExecStart=/opt/omni-chan-backend/bin/omni-chan-broadcast-worker
+
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=30s
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=omni-chan-broadcast-worker
+
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/omni-chan-backend/storage
+
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target
